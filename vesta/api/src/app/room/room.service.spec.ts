@@ -6,7 +6,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 describe('RoomService', () => {
   let service: RoomService;
   const prismaMock = {
-    rOOM: {
+    room: {
       create: jest.fn(),
     },
   };
@@ -22,11 +22,11 @@ describe('RoomService', () => {
 
   it('creates a room with provided data', async () => {
     const dto: CreateRoomDto = { name: 'Room A' };
-    prismaMock.rOOM.create.mockResolvedValue({ id: 1, ...dto });
+    prismaMock.room.create.mockResolvedValue({ id: 1, ...dto });
 
     const result = await service.create(dto);
 
     expect(result).toEqual({ id: 1, ...dto });
-    expect(prismaMock.rOOM.create).toHaveBeenCalledWith({ data: dto });
+    expect(prismaMock.room.create).toHaveBeenCalledWith({ data: dto });
   });
 });
