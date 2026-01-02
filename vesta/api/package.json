@@ -84,6 +84,7 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "reflect-metadata": "^0.1.13",
@@ -92,6 +93,7 @@
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
+    "@types/node": "^25.0.3",
     "prisma": "^7.2.0"
   }
 }
