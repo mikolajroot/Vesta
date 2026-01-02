@@ -1,1 +1,2 @@
 # Vesta
+Autor: Mikołaj Miszka
