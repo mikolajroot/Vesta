@@ -9,7 +9,7 @@ datasource db {
 }
 
 model ROOM {
-  id         BigInt   @id(map: "ROOM_pkey") @default(autoincrement())
-  name       String   @unique(map: "ROOM_name_key") @default("") @db.VarChar
+  id         Int      @id(map: "ROOMS_pkey") @default(autoincrement())
+  name       String   @unique(map: "ROOMS_name_key") @default("") @db.VarChar
   created_at DateTime @default(now()) @db.Timestamptz(6)
 }
