@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { ApiAcceptedResponse, ApiConflictResponse, ApiBody, ApiCreatedResponse } from '@nestjs/swagger';
+import { ApiConflictResponse, ApiBody, ApiCreatedResponse } from '@nestjs/swagger';
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 
