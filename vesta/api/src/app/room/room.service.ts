@@ -8,8 +8,9 @@ export class RoomService {
   constructor(private prisma: PrismaService){}
 
   async create(createRoomDto: CreateRoomDto){
+    const capitalizedName = createRoomDto.name.charAt(0).toUpperCase() + createRoomDto.name.slice(1).toLowerCase()
     const existingRoom = await this.prisma.room.findUnique({
-      where: { name: createRoomDto.name }
+      where: { name: capitalizedName }
     });
 
     if (existingRoom) {
@@ -17,7 +18,7 @@ export class RoomService {
     }
 
     return this.prisma.room.create({
-      data: createRoomDto
+      data: {...createRoomDto,name: capitalizedName}
     })
   }
 }
