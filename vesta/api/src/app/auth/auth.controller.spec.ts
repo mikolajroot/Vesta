@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import { AuthController } from './auth.controller';
+import { AuthController, AuthenticatedRequest } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { SignInDto } from './dto/sign-in.dto';
@@ -80,12 +80,12 @@ describe('AuthController', () => {
 
   describe('getProfile', () => {
     it('should return user from request', () => {
-      const mockRequest: any = {
+      const mockRequest = {
         user: {
           userId: '1',
           username: 'testuser',
         },
-      };
+      } as AuthenticatedRequest;
 
       const result = controller.getProfile(mockRequest);
 
