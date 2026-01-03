@@ -42,7 +42,7 @@ describe('UsersService', () => {
         password: 'hashedPassword',
       };
 
-      prismaService.users.findUnique.mockResolvedValue(mockUser);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue(mockUser);
 
       const result = await service.findOne('testuser');
 
@@ -53,7 +53,7 @@ describe('UsersService', () => {
     });
 
     it('should return null when user not found', async () => {
-      prismaService.users.findUnique.mockResolvedValue(null);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue(null);
 
       const result = await service.findOne('nonexistent');
 
@@ -72,12 +72,12 @@ describe('UsersService', () => {
         password: 'hashedPassword',
       };
 
-      prismaService.users.create.mockResolvedValue(mockUser);
+      (prismaService.users.create as jest.Mock).mockResolvedValue(mockUser);
 
       const result = await service.create('newuser', 'hashedPassword');
 
       expect(result).toEqual(mockUser);
-      expect(prismaService.users.create).toHaveBeenCalledWith({
+      expect(prismaService.users.create as jest.Mock).toHaveBeenCalledWith({
         data: {
           username: 'newuser',
           password: 'hashedPassword',

@@ -1,13 +1,14 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { Room } from '../../generated/prisma/client';
 
 
 @Injectable()
 export class RoomService {
   constructor(private prisma: PrismaService){}
 
-  async create(createRoomDto: CreateRoomDto){
+  async create(createRoomDto: CreateRoomDto): Promise<Room | null>{
     const capitalizedName = createRoomDto.name.charAt(0).toUpperCase() + createRoomDto.name.slice(1).toLowerCase()
     const existingRoom = await this.prisma.room.findUnique({
       where: { name: capitalizedName }
