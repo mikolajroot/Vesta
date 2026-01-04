@@ -7,6 +7,7 @@ describe('RoomController', () => {
   let controller: RoomController;
   const roomServiceMock = {
     create: jest.fn(),
+    getAllRooms: jest.fn(),
   } as unknown as RoomService;
 
   beforeEach(async () => {
@@ -27,5 +28,18 @@ describe('RoomController', () => {
 
     expect(result).toEqual({ id: 2, ...dto });
     expect(roomServiceMock.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('should return all rooms', async () => {
+    const mockRooms = [
+      { id: 1, name: 'Room a', created_at: new Date(), type: null, floor: 0, area: 0.0 },
+      { id: 2, name: 'Room b', created_at: new Date(), type: null, floor: 0, area: 0.0 },
+    ];
+    (roomServiceMock.getAllRooms as jest.Mock).mockResolvedValue(mockRooms);
+
+    const result = await controller.getAllRooms();
+
+    expect(result).toEqual(mockRooms);
+    expect(roomServiceMock.getAllRooms).toHaveBeenCalled();
   });
 });

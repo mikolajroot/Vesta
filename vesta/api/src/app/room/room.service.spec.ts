@@ -10,6 +10,7 @@ describe('RoomService', () => {
     room: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findMany: jest.fn(),
     },
   };
 
@@ -40,5 +41,27 @@ describe('RoomService', () => {
 
     await expect(service.create(dto)).rejects.toBeInstanceOf(ConflictException);
     expect(prismaMock.room.create).not.toHaveBeenCalled();
+  });
+
+  it('should return all rooms', async () => {
+    const mockRooms = [
+      { id: 1, name: 'Room a', created_at: new Date(), type: null, floor: 0, area: 0.0 },
+      { id: 2, name: 'Room b', created_at: new Date(), type: null, floor: 0, area: 0.0 },
+    ];
+    prismaMock.room.findMany.mockResolvedValue(mockRooms);
+
+    const result = await service.getAllRooms();
+
+    expect(prismaMock.room.findMany).toHaveBeenCalled();
+    expect(result).toEqual(mockRooms);
+  });
+
+  it('should return empty array when no rooms exist', async () => {
+    prismaMock.room.findMany.mockResolvedValue([]);
+
+    const result = await service.getAllRooms();
+
+    expect(prismaMock.room.findMany).toHaveBeenCalled();
+    expect(result).toEqual([]);
   });
 });
