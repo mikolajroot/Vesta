@@ -49,7 +49,7 @@ export class RoomService {
       const roomWithSameName = await this.prisma.room.findUnique({
         where: { name: updateData.name }
       });
-      
+
       if (roomWithSameName) {
         throw new ConflictException(`Room with name "${updateData.name}" already exists`);
       }
@@ -61,5 +61,21 @@ export class RoomService {
     })
 
     return { message: 'Room updated successfully' }
+  }
+
+
+  async deleteRoom(id: number): Promise<{message: string}>{
+    const existingRoom = await this.prisma.room.findUnique({
+      where: { id }
+    })
+
+     if (!existingRoom) {
+      throw new NotFoundException(`Room with id ${id} not found`);
+    }
+
+    await this.prisma.room.delete({ where: {id}})
+
+    return { message: 'Room deleted successfully' }
+
   }
 }
