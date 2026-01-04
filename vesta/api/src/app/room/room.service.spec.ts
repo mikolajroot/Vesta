@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { PrismaService } from '../../prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 
 describe('RoomService', () => {
   let service: RoomService;
@@ -11,6 +12,7 @@ describe('RoomService', () => {
       create: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
+      update: jest.fn(),
     },
   };
 
@@ -63,5 +65,37 @@ describe('RoomService', () => {
 
     expect(prismaMock.room.findMany).toHaveBeenCalled();
     expect(result).toEqual([]);
+  });
+
+  it('updates room and capitalizes name', async () => {
+    const dto: UpdateRoomDto = { name: 'kitchen', floor: 2 };
+    prismaMock.room.findUnique
+      .mockResolvedValueOnce({ id: 1, name: 'Living room' })
+      .mockResolvedValueOnce(null);
+    prismaMock.room.update.mockResolvedValue({ id: 1, name: 'Kitchen', floor: 2 });
+
+    const result = await service.updateRoom(1, dto);
+
+    expect(prismaMock.room.findUnique).toHaveBeenNthCalledWith(1, { where: { id: 1 } });
+    expect(prismaMock.room.findUnique).toHaveBeenNthCalledWith(2, { where: { name: 'Kitchen' } });
+    expect(prismaMock.room.update).toHaveBeenCalledWith({ where: { id: 1 }, data: { name: 'Kitchen', floor: 2 } });
+    expect(result).toEqual({ message: 'Room updated successfully' });
+  });
+
+  it('throws NotFoundException when updating missing room', async () => {
+    prismaMock.room.findUnique.mockResolvedValueOnce(null);
+
+    await expect(service.updateRoom(99, {})).rejects.toBeInstanceOf(NotFoundException);
+    expect(prismaMock.room.update).not.toHaveBeenCalled();
+  });
+
+  it('throws ConflictException when updating to existing name', async () => {
+    const dto: UpdateRoomDto = { name: 'Office' };
+    prismaMock.room.findUnique
+      .mockResolvedValueOnce({ id: 1, name: 'Living room' })
+      .mockResolvedValueOnce({ id: 2, name: 'Office' });
+
+    await expect(service.updateRoom(1, dto)).rejects.toBeInstanceOf(ConflictException);
+    expect(prismaMock.room.update).not.toHaveBeenCalled();
   });
 });
