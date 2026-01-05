@@ -53,7 +53,7 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'User already exists' })
   @Post('signup')
   signUp(@Body() signUpDto: SignUpDto) {
-    return this.authService.signUp(signUpDto.username, signUpDto.password);
+    return this.authService.signUp(signUpDto.username, signUpDto.password,signUpDto.role);
   }
 
   @ApiBearerAuth()

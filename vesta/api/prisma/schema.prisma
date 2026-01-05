@@ -21,6 +21,7 @@ model Users {
   id       Int    @id @unique @default(autoincrement())
   username String @unique(map: "Users_name_key") @db.VarChar
   password String @db.VarChar
+  role     Roles
 }
 
 enum RoomType {

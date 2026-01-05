@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { Roles } from '../../generated/prisma/enums';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +31,7 @@ export class AuthService {
   async signUp(
     username: string,
     password: string,
+    role: Roles
   ): Promise<{ access_token: string }> {
 
     const existingUser = await this.usersService.findOne(username);
@@ -42,9 +44,9 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
 
-    const user = await this.usersService.create(username, hashedPassword);
+    const user = await this.usersService.create(username, hashedPassword,role);
 
-  
+
     const payload = { sub: user.id, username: user.username };
     return { access_token: await this.jwtService.signAsync(payload) };
   }
