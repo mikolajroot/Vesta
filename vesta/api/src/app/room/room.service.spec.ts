@@ -13,6 +13,7 @@ describe('RoomService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
   };
 
@@ -97,5 +98,23 @@ describe('RoomService', () => {
 
     await expect(service.updateRoom(1, dto)).rejects.toBeInstanceOf(ConflictException);
     expect(prismaMock.room.update).not.toHaveBeenCalled();
+  });
+
+  it('deletes a room successfully', async () => {
+    prismaMock.room.findUnique.mockResolvedValue({ id: 1, name: 'Room a' });
+    prismaMock.room.delete.mockResolvedValue({ id: 1 });
+
+    const result = await service.deleteRoom(1);
+
+    expect(prismaMock.room.findUnique).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(prismaMock.room.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(result).toEqual({ message: 'Room deleted successfully' });
+  });
+
+  it('throws NotFoundException when deleting missing room', async () => {
+    prismaMock.room.findUnique.mockResolvedValue(null);
+
+    await expect(service.deleteRoom(42)).rejects.toBeInstanceOf(NotFoundException);
+    expect(prismaMock.room.delete).not.toHaveBeenCalled();
   });
 });

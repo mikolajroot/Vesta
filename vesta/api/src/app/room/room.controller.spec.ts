@@ -9,6 +9,7 @@ describe('RoomController', () => {
     create: jest.fn(),
     getAllRooms: jest.fn(),
     updateRoom: jest.fn(),
+    deleteRoom: jest.fn(),
   } as unknown as RoomService;
 
   beforeEach(async () => {
@@ -52,5 +53,14 @@ describe('RoomController', () => {
 
     expect(result).toEqual({ message: 'Room updated successfully' });
     expect(roomServiceMock.updateRoom).toHaveBeenCalledWith(1, dto);
+  });
+
+  it('delegates delete to service', async () => {
+    (roomServiceMock.deleteRoom as jest.Mock).mockResolvedValue({ message: 'Room deleted successfully' });
+
+    const result = await controller.deleteRoom(3);
+
+    expect(result).toEqual({ message: 'Room deleted successfully' });
+    expect(roomServiceMock.deleteRoom).toHaveBeenCalledWith(3);
   });
 });
