@@ -7,7 +7,7 @@ import { AuthGuard } from './auth.guard';
 
 export interface AuthenticatedRequest extends Request {
   user: {
-    userId: string;
+    userId: number;
     username: string;
   };
 }
@@ -20,12 +20,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Sign in user' })
   @ApiBody({
     type: SignInDto,
-    examples: { 
-      default: { value: { username: 'john_doe', password: 'password123' } } 
+    examples: {
+      default: { value: { username: 'john_doe', password: 'password123' } }
     }
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User signed in successfully',
     example: { access_token: 'eyJhbGciOiJIUzI1NiIs...' }
   })
@@ -39,14 +39,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Register new user' })
   @ApiBody({
     type: SignUpDto,
-    examples: { 
-      default: { value: { username: 'john_doe', password: 'password123' } } 
+    examples: {
+      default: { value: { username: 'john_doe', password: 'password123' } }
     }
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'User created successfully',
-    example: { id: '123', username: 'john_doe', message: 'User created' }
+    example: { id: 123, username: 'john_doe', message: 'User created' }
   })
   @ApiResponse({ status: 409, description: 'User already exists' })
   @Post('signup')
@@ -56,10 +56,10 @@ export class AuthController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get authenticated user profile' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User profile retrieved',
-    example: { userId: '123', username: 'john_doe' }
+    example: { userId: 123, username: 'john_doe' }
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(AuthGuard)
