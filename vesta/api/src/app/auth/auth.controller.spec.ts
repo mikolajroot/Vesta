@@ -82,7 +82,7 @@ describe('AuthController', () => {
     it('should return user from request', () => {
       const mockRequest = {
         user: {
-          userId: '1',
+          sub: 1,
           username: 'testuser',
         },
       } as AuthenticatedRequest;

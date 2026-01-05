@@ -1,22 +1,28 @@
 import { Module } from '@nestjs/common';
+// import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { RoomModule } from './room/room.module';
-import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+// import { AuthGuard } from './auth/auth.guard';
+import { UsersModule } from './users/users.module';
+import { RoomModule } from './room/room.module';
 
+//uncomment only for production
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
-    RoomModule,
-    UsersModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
+    UsersModule,
+    RoomModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AuthGuard,
+    // },
+  ],
 })
 export class AppModule {}

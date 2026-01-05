@@ -1,13 +1,13 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, Get, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { Body, Controller, Post, HttpCode, HttpStatus, Get, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
-import { AuthGuard } from './auth.guard';
+import { Public } from './decorators/public.decorator';
 
 export interface AuthenticatedRequest extends Request {
   user: {
-    userId: number;
+    sub: number;
     username: string;
   };
 }
@@ -17,6 +17,7 @@ export interface AuthenticatedRequest extends Request {
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Public()
   @ApiOperation({ summary: 'Sign in user' })
   @ApiBody({
     type: SignInDto,
@@ -36,6 +37,7 @@ export class AuthController {
     return this.authService.signIn(signInDto.username, signInDto.password);
   }
 
+  @Public()
   @ApiOperation({ summary: 'Register new user' })
   @ApiBody({
     type: SignUpDto,
@@ -59,10 +61,9 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'User profile retrieved',
-    example: { userId: 123, username: 'john_doe' }
+    example: { sub: 123, username: 'john_doe' }
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(AuthGuard)
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @Get('profile')
   getProfile(@Request() req: AuthenticatedRequest) {
     return req.user;
