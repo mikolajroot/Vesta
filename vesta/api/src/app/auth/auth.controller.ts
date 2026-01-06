@@ -61,7 +61,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'User profile retrieved',
-    example: { sub: 123, username: 'john_doe' }
+    example: { sub: 123, username: 'john_doe',role:"Admin" }
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @Get('profile')

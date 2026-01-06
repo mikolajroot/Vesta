@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import { Roles } from '../../generated/prisma/enums';
 
 jest.mock('bcrypt');
 
@@ -51,6 +52,7 @@ describe('AuthService', () => {
         id: 1,
         username: 'testuser',
         password: 'hashedPassword',
+        role: 'Admin' as Roles,
       };
       const mockToken = 'jwt.token.here';
 
@@ -66,6 +68,7 @@ describe('AuthService', () => {
       expect(jwtService.signAsync).toHaveBeenCalledWith({
         sub: 1,
         username: 'testuser',
+        role: 'Admin',
       });
     });
 
@@ -83,6 +86,7 @@ describe('AuthService', () => {
         id: 1,
         username: 'testuser',
         password: 'hashedPassword',
+        role: "Admin" as Roles
       };
 
       usersService.findOne.mockResolvedValue(mockUser);
@@ -101,6 +105,7 @@ describe('AuthService', () => {
         id: 1,
         username: 'newuser',
         password: 'hashedPassword',
+        role: "Admin" as Roles
       };
       const mockToken = 'jwt.token.here';
 
@@ -109,15 +114,16 @@ describe('AuthService', () => {
       usersService.create.mockResolvedValue(mockUser);
       jwtService.signAsync.mockResolvedValue(mockToken);
 
-      const result = await service.signUp('newuser', 'password123');
+      const result = await service.signUp('newuser', 'password123',"Admin");
 
       expect(result).toEqual({ access_token: mockToken });
       expect(usersService.findOne).toHaveBeenCalledWith('newuser');
       expect(bcrypt.hash).toHaveBeenCalledWith('password123', 10);
-      expect(usersService.create).toHaveBeenCalledWith('newuser', 'hashedPassword');
+      expect(usersService.create).toHaveBeenCalledWith('newuser', 'hashedPassword',"Admin");
       expect(jwtService.signAsync).toHaveBeenCalledWith({
         sub: 1,
         username: 'newuser',
+        role: 'Admin',
       });
     });
 
@@ -126,11 +132,12 @@ describe('AuthService', () => {
         id: 1,
         username: 'existinguser',
         password: 'hashedPassword',
+        role: "Admin" as Roles
       };
 
       usersService.findOne.mockResolvedValue(mockUser);
 
-      await expect(service.signUp('existinguser', 'password123')).rejects.toThrow(
+      await expect(service.signUp('existinguser', 'password123',"Admin")).rejects.toThrow(
         ConflictException,
       );
       expect(usersService.findOne).toHaveBeenCalledWith('existinguser');

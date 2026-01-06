@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { AuthController, AuthenticatedRequest } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
@@ -28,7 +30,25 @@ describe('AuthController', () => {
             signAsync: jest.fn(),
           },
         },
-        AuthGuard,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => {
+              if (key === 'JWT_SECRET') return 'test-secret';
+              return null;
+            }),
+          },
+        },
+        {
+          provide: Reflector,
+          useValue: {
+            getAllAndOverride: jest.fn(),
+          },
+        },
+        {
+          provide: APP_GUARD,
+          useClass: AuthGuard,
+        },
       ],
     }).compile();
 
@@ -66,6 +86,7 @@ describe('AuthController', () => {
       const signUpDto: SignUpDto = {
         username: 'newuser',
         password: 'password123',
+        role: "Admin"
       };
       const mockResult = { access_token: 'jwt.token.here' };
 
@@ -74,7 +95,7 @@ describe('AuthController', () => {
       const result = await controller.signUp(signUpDto);
 
       expect(result).toEqual(mockResult);
-      expect(authService.signUp).toHaveBeenCalledWith('newuser', 'password123');
+      expect(authService.signUp).toHaveBeenCalledWith('newuser', 'password123',"Admin");
     });
   });
 
