@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,6 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { Roles } from '../../generated/prisma/enums';
+import { ROLES_KEY } from './decorators/roles.decorator';
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -39,6 +42,21 @@ export class AuthGuard implements CanActivate {
       request['user'] = payload;
     } catch {
       throw new UnauthorizedException();
+    }
+
+    const requiredRoles = this.reflector.getAllAndOverride<Roles[]>(ROLES_KEY,[
+      context.getHandler(),
+      context.getClass()
+    ])
+
+    if (!requiredRoles) {
+      return true
+    }
+
+    const userRole = request['user'].role
+
+    if (!requiredRoles.includes(userRole)){
+      throw new ForbiddenException('Wrong permissions')
     }
     return true;
   }
