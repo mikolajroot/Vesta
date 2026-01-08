@@ -12,11 +12,9 @@ export class CreateRoomDto {
     example: 'KITCHEN',
     description: 'Room type',
     enum: RoomType,
-    required: false
   })
   @IsEnum(RoomType)
-  @IsOptional()
-  type?: RoomType;
+  type: RoomType;
 
   @ApiProperty({
     example: 1,
@@ -35,4 +33,7 @@ export class CreateRoomDto {
   @IsNumber()
   @IsOptional()
   area?: number;
+  @IsNumber()
+  @IsNotEmpty()
+  home_id:number
 }
