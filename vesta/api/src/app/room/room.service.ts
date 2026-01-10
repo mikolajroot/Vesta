@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -16,7 +16,7 @@ export class RoomService {
     });
 
     if (existingRoom) {
-      throw new ConflictException(`Room with name "${createRoomDto.name}" already exists`);
+      throw new ConflictException(`Room with name "${createRoomDto.name}" already exists`)
     }
 
     return this.prisma.room.create({
@@ -24,10 +24,21 @@ export class RoomService {
     })
   }
 
-  async getAllRooms(): Promise<Room[] | null>{
-    const allRooms = this.prisma.room.findMany()
+  async getAllRooms(home_id: number,userId: number): Promise<Room[] | null>{
+    const home = await this.prisma.home.findUnique({
+      where: { id: home_id }
+    });
 
-    return allRooms
+    const isUser = home?.users_id.includes(userId)
+    if (!isUser) {
+      throw new ForbiddenException('User not in home')
+    }
+
+    const allRooms = await this.prisma.room.findMany({
+      where: { home_id: home_id }
+    });
+
+    return allRooms;
   }
 
   async updateRoom(id: number, updateRoomDto: UpdateRoomDto): Promise<{ message: string }>{
@@ -36,13 +47,13 @@ export class RoomService {
     })
 
      if (!existingRoom) {
-      throw new NotFoundException(`Room with id ${id} not found`);
+      throw new NotFoundException(`Room with id ${id} not found`)
     }
 
 
     const updateData = { ...updateRoomDto };
     if (updateData.name) {
-      updateData.name = updateData.name.charAt(0).toUpperCase() + updateData.name.slice(1).toLowerCase();
+      updateData.name = updateData.name.charAt(0).toUpperCase() + updateData.name.slice(1).toLowerCase()
     }
 
     if (updateData.name && updateData.name !== existingRoom.name) {

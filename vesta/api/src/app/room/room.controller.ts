@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Delete,
+  Query,
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
@@ -15,6 +16,8 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiNotFoundResponse,
+  ApiForbiddenResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -35,12 +38,18 @@ export class RoomController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get all rooms',
-    description: 'Retrieves a list of all rooms in the system',
+    summary: 'Get all rooms in home',
+    description: 'Retrieves a list of all rooms in the home',
   })
+  @ApiQuery({ name: 'homeId', type: Number, description: 'Home ID' })
+  @ApiQuery({ name: 'userId', type: Number, description: 'User ID' })
   @ApiOkResponse({ description: 'List of rooms retrieved successfully' })
-  getAllRooms() {
-    return this.roomService.getAllRooms();
+  @ApiForbiddenResponse({description: 'User doesn`t have access to this home'})
+  getAllRooms(
+    @Query('homeId', ParseIntPipe) homeId: number,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.roomService.getAllRooms(homeId, userId);
   }
 
   @Patch(':id')
@@ -58,6 +67,8 @@ export class RoomController {
   ) {
     return this.roomService.updateRoom(id, updateRoomDto);
   }
+
+
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete a room',
