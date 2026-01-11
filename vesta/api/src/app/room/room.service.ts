@@ -11,12 +11,12 @@ export class RoomService {
 
   async create(createRoomDto: CreateRoomDto): Promise<Room | null>{
     const capitalizedName = createRoomDto.name.charAt(0).toUpperCase() + createRoomDto.name.slice(1).toLowerCase()
-    const existingRoom = await this.prisma.room.findUnique({
-      where: { name: capitalizedName }
+    const existingRoom = await this.prisma.room.findFirst({
+      where: { name: capitalizedName, home_id: createRoomDto.home_id }
     });
 
     if (existingRoom) {
-      throw new ConflictException(`Room with name "${createRoomDto.name}" already exists`)
+      throw new ConflictException(`Room with name "${createRoomDto.name}" already exists in this home`)
     }
 
     return this.prisma.room.create({
@@ -57,12 +57,12 @@ export class RoomService {
     }
 
     if (updateData.name && updateData.name !== existingRoom.name) {
-      const roomWithSameName = await this.prisma.room.findUnique({
-        where: { name: updateData.name }
+      const roomWithSameName = await this.prisma.room.findFirst({
+        where: { name: updateData.name, home_id: existingRoom.home_id, NOT: { id } }
       });
 
       if (roomWithSameName) {
-        throw new ConflictException(`Room with name "${updateData.name}" already exists`);
+        throw new ConflictException(`Room with name "${updateData.name}" already exists in this home`);
       }
     }
 

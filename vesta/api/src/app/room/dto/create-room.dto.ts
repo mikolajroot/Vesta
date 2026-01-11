@@ -33,7 +33,12 @@ export class CreateRoomDto {
   @IsNumber()
   @IsOptional()
   area?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Home ID the room belongs to'
+  })
   @IsNumber()
   @IsNotEmpty()
-  home_id:number
+  home_id: number
 }
