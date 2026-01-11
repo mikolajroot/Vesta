@@ -9,7 +9,7 @@ import { Room } from '../../generated/prisma/client';
 export class RoomService {
   constructor(private prisma: PrismaService){}
 
-  async create(createRoomDto: CreateRoomDto): Promise<Room | null>{
+  async create(createRoomDto: CreateRoomDto): Promise<{ message: string }>{
     const capitalizedName = createRoomDto.name.charAt(0).toUpperCase() + createRoomDto.name.slice(1).toLowerCase()
     const existingRoom = await this.prisma.room.findFirst({
       where: { name: capitalizedName, home_id: createRoomDto.home_id }
@@ -19,9 +19,11 @@ export class RoomService {
       throw new ConflictException(`Room with name "${createRoomDto.name}" already exists in this home`)
     }
 
-    return this.prisma.room.create({
+    await this.prisma.room.create({
       data: {...createRoomDto,name: capitalizedName}
     })
+
+    return { message: 'Room created successfully' }
   }
 
   async getAllRooms(home_id: number,userId: number): Promise<Room[] | null>{
