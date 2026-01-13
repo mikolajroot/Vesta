@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RoomModule } from './room/room.module';
 import { HomesService } from './homes/homes.service';
+import { HomesModule } from './homes/homes.module';
 
 //uncomment only for production
 @Module({
@@ -16,6 +17,7 @@ import { HomesService } from './homes/homes.service';
     AuthModule,
     UsersModule,
     RoomModule,
+    HomesModule,
   ],
   controllers: [AppController],
   providers: [
