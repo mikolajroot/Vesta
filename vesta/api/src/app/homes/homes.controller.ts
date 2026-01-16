@@ -34,5 +34,6 @@ export class HomesController {
         @Body() updateHomeDto: UpdateHomeDto){
             return this.homeService.updatehomeName(id, updateHomeDto)
         }
+
     
 }

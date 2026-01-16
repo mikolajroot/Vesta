@@ -3,6 +3,8 @@ import { PrismaService } from '../../prisma.service';
 import { CreateHomeDto } from './dto/create-home.dto';
 import { Home } from '../../generated/prisma/client';
 import { UpdateHomeDto } from './dto/update-home.dto';
+import {UpdateArrayDto} from './dto/update-array.dto';
+
 @Injectable()
 export class HomesService {
   constructor(private prisma: PrismaService) {}
@@ -22,6 +24,7 @@ export class HomesService {
   }
 
   async updatehomeName(homeId: number,updateHomeDto:UpdateHomeDto): Promise<{ message: string }>  {
+
     const existingHome = await this.prisma.home.findUnique({ where: { id: homeId}})
 
     if (!existingHome){
@@ -32,6 +35,13 @@ export class HomesService {
     await this.prisma.home.update({where : {id : homeId} , data: updateHomeDto})
 
     return { message: "Succesfully updated name"}
+
+  }
+
+  async addUserToUsersArray(updatePayload: UpdateArrayDto): Promise<{ messege: string}>{
+    await this.prisma.home.update({where : { invite_code: updatePayload.invitation_code} ,data : { users_id: {push : updatePayload.user_id} }})
+
+    return { messege : "User added to House"}
 
   }
   
