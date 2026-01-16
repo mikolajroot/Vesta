@@ -8,7 +8,11 @@ export class HomesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createHomeDto: CreateHomeDto): Promise<{ message: string }> {
-    await this.prisma.home.create({ data: createHomeDto });
+    await this.prisma.home.create({ data: {
+      name: createHomeDto.name,
+      users_id: [createHomeDto.userId],
+      owner_id: createHomeDto.userId
+    }});
 
     return { message: 'Home created successfully' };
   }

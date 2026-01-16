@@ -26,6 +26,7 @@ model Users {
   username String @unique(map: "Users_name_key") @db.VarChar
   password String @db.VarChar
   role     Roles
+  Home     Home[]
 }
 
 model Home {
@@ -33,6 +34,8 @@ model Home {
   name        String @db.VarChar
   users_id    Int[]
   invite_code String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id    Int
+  Users       Users  @relation(fields: [owner_id], references: [id], onDelete: Cascade)
   Room        Room[]
 }
 

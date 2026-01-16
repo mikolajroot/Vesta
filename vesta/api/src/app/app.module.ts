@@ -7,8 +7,8 @@ import { AuthModule } from './auth/auth.module';
 // import { AuthGuard } from './auth/auth.guard';
 import { UsersModule } from './users/users.module';
 import { RoomModule } from './room/room.module';
-import { HomesService } from './homes/homes.service';
 import { HomesModule } from './homes/homes.module';
+import { PrismaService } from '../prisma.service';
 
 //uncomment only for production
 @Module({
@@ -22,7 +22,7 @@ import { HomesModule } from './homes/homes.module';
   controllers: [AppController],
   providers: [
     AppService,
-    HomesService,
+    PrismaService,
     // {
     //   provide: APP_GUARD,
     //   useClass: AuthGuard,
