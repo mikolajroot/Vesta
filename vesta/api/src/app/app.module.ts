@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { RoomModule } from './room/room.module';
 import { HomesModule } from './homes/homes.module';
 import { PrismaService } from '../prisma.service';
+import { DevicesModule } from './devices/devices.module';
 
 //uncomment only for production
 @Module({
@@ -18,6 +19,7 @@ import { PrismaService } from '../prisma.service';
     UsersModule,
     RoomModule,
     HomesModule,
+    DevicesModule,
   ],
   controllers: [AppController],
   providers: [
