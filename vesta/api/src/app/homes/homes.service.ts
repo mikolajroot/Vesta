@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreateHomeDto } from './dto/create-home.dto';
 import { Home } from '../../generated/prisma/client';
@@ -31,7 +31,7 @@ export class HomesService {
       throw new NotFoundException("Home doesn`t exists")
     }
 
-    
+
     await this.prisma.home.update({where : {id : homeId} , data: updateHomeDto})
 
     return { message: "Succesfully updated name"}
@@ -44,5 +44,22 @@ export class HomesService {
     return { messege : "User added to House"}
 
   }
-  
+
+  async deleteHome(homeId: number,userId: number): Promise<{ messege: string}>{
+     const home = await this.prisma.home.findUnique({ where: { id: homeId } });
+
+     if (!home){
+      throw new NotFoundException("Home doesn`t exists")
+     }
+     if (home?.owner_id != userId){
+      throw new ForbiddenException("User is not owner")
+     }
+
+     await this.prisma.home.delete({ where: {id: homeId}})
+
+     return { messege : "Homes succesfully updated"}
+
+
+  }
+
 }
