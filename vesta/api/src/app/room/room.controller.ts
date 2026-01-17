@@ -22,12 +22,15 @@ import {
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { RequireRoles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../../generated/prisma/enums';
 
 @Controller('rooms')
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
   @Post()
+  @RequireRoles(Roles.Admin)
   @ApiOperation({ summary: 'Create a room', description: 'Creates a new room' })
   @ApiBody({ type: CreateRoomDto, description: 'Room payload' })
   @ApiConflictResponse({ description: 'Room name already exists' })
@@ -53,6 +56,7 @@ export class RoomController {
   }
 
   @Patch(':id')
+  @RequireRoles(Roles.Admin)
   @ApiOperation({
     summary: 'Update a room',
     description: 'Updates an existing room by id',
@@ -70,6 +74,7 @@ export class RoomController {
 
 
   @Delete(':id')
+  @RequireRoles(Roles.Admin)
   @ApiOperation({
     summary: 'Delete a room',
     description: 'Deletes an existing room by id',
