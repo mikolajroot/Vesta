@@ -1,5 +1,5 @@
-import { Controller, Post, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiCreatedResponse, ApiBadRequestResponse, ApiBody, ApiNotFoundResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, Get, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiCreatedResponse, ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { DevicesService } from './devices.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
 
@@ -16,5 +16,16 @@ export class DevicesController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   create(@Body() createDeviceDto: CreateDeviceDto) {
     return this.devicesService.create(createDeviceDto);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get all devices in room',
+    description: 'Retrieves a list of all devices in the room',
+  })
+  @ApiQuery({ name: 'roomId', type: Number, description: 'Room ID' })
+  @ApiOkResponse({ description: 'List of devices retrieved successfully' })
+  getAllDevices(@Query('roomId', ParseIntPipe) roomId: number) {
+    return this.devicesService.getAllDevices(roomId);
   }
 }

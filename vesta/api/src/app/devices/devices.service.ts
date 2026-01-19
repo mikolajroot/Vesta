@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
+import { Devices } from '../../generated/prisma/client';
 
 @Injectable()
 export class DevicesService {
@@ -19,5 +20,9 @@ export class DevicesService {
         });
 
       return {message: "device created successfully"}
+    }
+
+    async getAllDevices(room_id: number): Promise<Devices[]>{
+      return this.prisma.devices.findMany({ where: { room_id } })
     }
 }
