@@ -5,7 +5,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string, role: 'Admin' | 'Child') => Promise<void>;
   logout: () => void;
   loading: boolean;
   error: string | null;
@@ -52,11 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (username: string, password: string) => {
+  const register = async (username: string, password: string, role: 'Admin' | 'Child') => {
     setLoading(true);
     setError(null);
     try {
-      const response = await authAPI.register({ username, password });
+      const response = await authAPI.register({ username, password, role  });
       localStorage.setItem('access_token', response.data.access_token);
 
 

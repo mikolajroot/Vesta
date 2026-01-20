@@ -19,6 +19,7 @@ api.interceptors.request.use((config) => {
 });
 
 // Types
+
 export interface LoginCredentials {
   username: string;
   password: string;
@@ -27,6 +28,7 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   username: string;
   password: string;
+  role: 'Admin' | 'Child';
 }
 
 export interface AuthResponse {
