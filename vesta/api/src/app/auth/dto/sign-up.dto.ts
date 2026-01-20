@@ -9,6 +9,7 @@ export class SignUpDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MinLength(3)
   username: string;
 
   @ApiProperty({
