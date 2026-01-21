@@ -36,7 +36,7 @@ export interface AuthResponse {
 }
 
 export interface User {
-  id: number;
+  sub: number;
   username: string;
   role: 'Admin' | 'Child';
 }
