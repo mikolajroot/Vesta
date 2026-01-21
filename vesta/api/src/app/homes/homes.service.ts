@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -52,6 +53,18 @@ export class HomesService {
   async addUserToUsersArray(
     updatePayload: UpdateArrayDto,
   ): Promise<{ messege: string }> {
+    const home = await this.prisma.home.findUnique({
+      where: { invite_code: updatePayload.invitation_code },
+    });
+
+    if (!home) {
+      throw new NotFoundException('Home doesn`t exist');
+    }
+
+    if (home.users_id.includes(updatePayload.user_id)) {
+      throw new ConflictException(`User is alredy in home : ${home.name}`)
+    }
+
     await this.prisma.home.update({
       where: { invite_code: updatePayload.invitation_code },
       data: { users_id: { push: updatePayload.user_id } },
