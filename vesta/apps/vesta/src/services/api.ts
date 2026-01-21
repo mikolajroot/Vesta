@@ -83,8 +83,8 @@ export const authAPI = {
 export const homesAPI = {
   getAll: (userId: number) =>
     api.get<Home[]>(`/homes?userId=${userId}`),
-  create: (name: string) =>
-    api.post<Home>('/homes', { name }),
+  create: (name: string, userId: number) =>
+    api.post<Home>('/homes', { name, userId }),
   update: (id: number, name: string) =>
     api.patch<Home>(`/homes/${id}`, { name }),
   addUser: (invitationCode: string, userId: number) =>
