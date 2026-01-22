@@ -85,6 +85,8 @@ export const homesAPI = {
     api.get<Home[]>(`/homes?userId=${userId}`),
   create: (name: string, userId: number) =>
     api.post<Home>('/homes', { name, userId }),
+  delete: (id: number, ownerId: number) =>
+    api.delete(`/homes/${id}`, { params: { userId: ownerId } }),
   update: (id: number, name: string) =>
     api.patch<Home>(`/homes/${id}`, { name }),
   addUser: (invitationCode: string, userId: number) =>
@@ -92,8 +94,6 @@ export const homesAPI = {
       invitation_code: invitationCode,
       user_id: userId,
     }),
-  delete: (id: number) =>
-    api.delete(`/homes/${id}`),
 };
 
 // Rooms API
