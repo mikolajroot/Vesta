@@ -10,7 +10,7 @@ import {
   Alert,
   Link as MuiLink,
 } from '@mui/material';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { Formik, Form, Field, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { useAuth } from '../context/AuthContext';
@@ -31,8 +31,12 @@ const loginValidationSchema = Yup.object({
 
 export function LoginPage() {
   const [localError, setLocalError] = React.useState<string | null>(null);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const initialValues: LoginFormValues = {
     username: '',

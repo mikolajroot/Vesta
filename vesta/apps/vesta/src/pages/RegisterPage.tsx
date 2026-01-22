@@ -14,7 +14,7 @@ import {
   InputLabel,
   Select,
 } from '@mui/material';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { Formik, Form, Field, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { useAuth } from '../context/AuthContext';
@@ -43,8 +43,12 @@ const registerValidationSchema = Yup.object({
 
 export function RegisterPage() {
   const [localError, setLocalError] = React.useState<string | null>(null);
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const initialValues: RegisterFormValues = {
     role: 'Child',
