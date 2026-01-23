@@ -19,6 +19,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import HouseIcon from '@mui/icons-material/House';
 import EditIcon from '@mui/icons-material/Edit';
@@ -151,6 +153,20 @@ export function HomesPage() {
     await navigator.clipboard.writeText(code);
   };
 
+  const handleRemoveUser = async (homeId: number, memberId: number, ownerId: number) => {
+    if (!user) return;
+    if (memberId === ownerId) {
+      setError('Owner cannot be removed');
+      return;
+    }
+    try {
+      await homesAPI.removeUser(homeId, memberId, user.sub);
+      await fetchHomes();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to remove user'));
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box
@@ -271,6 +287,38 @@ export function HomesPage() {
                                   Copy
                                 </Button>
                               </Stack>
+                              <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                  Members
+                                </Typography>
+                                <Stack spacing={1} sx={{ mt: 1 }}>
+                                  {(home.users_id ?? []).length === 0 ? (
+                                    <Typography color="text.secondary">No members yet.</Typography>
+                                  ) : (
+                                    (home.users_id ?? []).map((memberId) => {
+                                      const isOwner = home.owner_id === memberId;
+                                      const canRemove = user?.sub === home.owner_id && !isOwner;
+                                      return (
+                                        <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
+                                          <Chip size="small" label={`User ${memberId}${isOwner ? ' (owner)' : ''}`} />
+                                          <Tooltip title={canRemove ? 'Remove user' : isOwner ? 'Owner cannot be removed' : 'Only owner can remove'}>
+                                            <span>
+                                              <IconButton
+                                                size="small"
+                                                color="error"
+                                                disabled={!canRemove}
+                                                onClick={() => handleRemoveUser(home.id, memberId, home.owner_id)}
+                                              >
+                                                <DeleteIcon fontSize="small" />
+                                              </IconButton>
+                                            </span>
+                                          </Tooltip>
+                                        </Stack>
+                                      );
+                                    })
+                                  )}
+                                </Stack>
+                              </Box>
                             </Box>
                             <Stack direction="row" spacing={1}>
                               <Button

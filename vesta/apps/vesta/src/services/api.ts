@@ -94,6 +94,8 @@ export const homesAPI = {
       invitation_code: invitationCode,
       user_id: userId,
     }),
+  removeUser: (homeId: number, userId: number, ownerId: number) =>
+    api.delete<Home>(`/homes/${homeId}/users/${userId}`, { params: { ownerId } }),
 };
 
 // Rooms API
