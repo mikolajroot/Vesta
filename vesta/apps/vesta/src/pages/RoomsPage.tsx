@@ -3,7 +3,19 @@ import * as Yup from 'yup';
 import { roomsAPI, homesAPI, Room, Home } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-
+import {
+  Box,
+  Grid,
+  Paper,
+  Typography,
+  Stack,
+  Button,
+  TextField,
+  MenuItem,
+  Chip,
+} from '@mui/material';
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import { Formik, Form, Field, FormikHelpers } from 'formik';
 
 function getErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === 'object') {
@@ -81,6 +93,10 @@ export function RoomsPage() {
   const [selectedHome, setSelectedHome] = useState<number | null>(null);
 
 
+
+
+
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -133,8 +149,136 @@ export function RoomsPage() {
     }
   };
 
+  const handleCreateRoom = async (
+    values: CreateRoomForm,
+    helpers: FormikHelpers<CreateRoomForm>,
+  ) => {
+    if (!user) return;
+    try {
+      await roomsAPI.create(values);
+      if (selectedHome) {
+        await fetchRooms(selectedHome);
+      }
+      helpers.resetForm();
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create room'));
+    }
+  };
 
 
 
- return <></>
+
+
+
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+        <MeetingRoomIcon fontSize="large" color="primary" />
+        <Typography variant="h4">Rooms</Typography>
+      </Stack>
+
+      <Grid container spacing={3}>
+        {/* Home Selector */}
+        <Grid size={{ xs: 12 }}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Select Home
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {homes.map((home) => (
+                <Chip
+                  key={home.id}
+                  label={home.name}
+                  color={selectedHome === home.id ? 'primary' : 'default'}
+                  onClick={() => setSelectedHome(home.id)}
+                  sx={{ mb: 1 }}
+                />
+              ))}
+            </Stack>
+          </Paper>
+        </Grid>
+
+        {/* Create Room Form */}
+        {user && user.role === 'Admin' && selectedHome && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Create Room
+              </Typography>
+              <Formik
+                initialValues={{
+                  name: '',
+                  type: 'LIVING_ROOM',
+                  floor: 0,
+                  area: 0,
+                  home_id: selectedHome,
+                }}
+                validationSchema={createRoomSchema}
+                onSubmit={handleCreateRoom}
+                enableReinitialize
+              >
+                {({ errors, touched, isSubmitting }) => (
+                  <Form>
+                    <Stack spacing={2}>
+                      <Field
+                        as={TextField}
+                        name="name"
+                        label="Room Name"
+                        fullWidth
+                        error={touched.name && Boolean(errors.name)}
+                        helperText={touched.name && errors.name}
+                      />
+                      <Field
+                        as={TextField}
+                        name="type"
+                        label="Room Type"
+                        select
+                        fullWidth
+                        error={touched.type && Boolean(errors.type)}
+                        helperText={touched.type && errors.type}
+                      >
+                        {roomTypes.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Field>
+                      <Field
+                        as={TextField}
+                        name="floor"
+                        label="Floor"
+                        type="number"
+                        fullWidth
+                        error={touched.floor && Boolean(errors.floor)}
+                        helperText={touched.floor && errors.floor}
+                      />
+                      <Field
+                        as={TextField}
+                        name="area"
+                        label="Area (m²)"
+                        type="number"
+                        fullWidth
+                        error={touched.area && Boolean(errors.area)}
+                        helperText={touched.area && errors.area}
+                      />
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        fullWidth
+                        disabled={isSubmitting}
+                      >
+                        Create Room
+                      </Button>
+                    </Stack>
+                  </Form>
+                )}
+              </Formik>
+            </Paper>
+          </Grid>
+        )}
+        </Grid>
+    </Box>
+  );
 }
