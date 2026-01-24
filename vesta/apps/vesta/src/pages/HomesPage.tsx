@@ -3,6 +3,7 @@ import { Formik, Form, Field, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { homesAPI, Home, usersAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -60,12 +61,19 @@ const renameHomeSchema = Yup.object({
 
 export function HomesPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [homes, setHomes] = useState<Home[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [renameOpen, setRenameOpen] = useState(false);
   const [selectedHome, setSelectedHome] = useState<Home | null>(null);
   const [usernames, setUsernames] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (user) {
