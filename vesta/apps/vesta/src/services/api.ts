@@ -118,8 +118,8 @@ export const homesAPI = {
 
 // Rooms API
 export const roomsAPI = {
-  getAll: (homeId: number) =>
-    api.get<Room[]>(`/rooms?homeId=${homeId}`),
+  getAll: (homeId: number, userId: number) =>
+    api.get<Room[]>(`/rooms?homeId=${homeId}&userId=${userId}`),
   create: (data: {
     name: string;
     type: string;

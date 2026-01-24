@@ -17,6 +17,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import DevicesIcon from '@mui/icons-material/Devices';
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -54,6 +55,7 @@ export function Layout({ children }: LayoutProps) {
   const navigationItems = [
     { label: 'Dashboard', icon: <HomeIcon />, path: '/dashboard' },
     { label: 'My Homes', icon: <HomeIcon />, path: '/homes' },
+    { label: 'Rooms', icon: <MeetingRoomIcon />, path: '/rooms' },
     { label: 'Devices', icon: <DevicesIcon />, path: '/devices' },
   ];
 

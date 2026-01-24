@@ -3,6 +3,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { HomesPage } from '../pages/HomesPage';
+import { RoomsPage } from '../pages/RoomsPage';
 import { Layout } from '../components/Layout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +41,16 @@ export function App() {
           <ProtectedRoute>
             <Layout>
               <HomesPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rooms"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <RoomsPage />
             </Layout>
           </ProtectedRoute>
         }
