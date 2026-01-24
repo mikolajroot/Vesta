@@ -79,6 +79,12 @@ export const authAPI = {
   getProfile: () => api.get<User>('/auth/profile'),
 };
 
+// Users API
+export const usersAPI = {
+  getById: (userId: number) =>
+    api.get<Pick<User, 'sub' | 'username' | 'role'>>(`/users/${userId}`),
+};
+
 // Homes API
 export const homesAPI = {
   getAll: (userId: number) =>

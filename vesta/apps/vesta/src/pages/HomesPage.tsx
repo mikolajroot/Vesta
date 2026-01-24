@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Formik, Form, Field, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { homesAPI, Home } from '../services/api';
+import { homesAPI, Home, usersAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   Box,
@@ -65,6 +65,7 @@ export function HomesPage() {
   const [error, setError] = useState<string | null>(null);
   const [renameOpen, setRenameOpen] = useState(false);
   const [selectedHome, setSelectedHome] = useState<Home | null>(null);
+  const [usernames, setUsernames] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (user) {
@@ -79,7 +80,28 @@ export function HomesPage() {
     setError(null);
     try {
       const res = await homesAPI.getAll(user.sub);
-      setHomes(res.data || []);
+      const homesData = res.data || [];
+      setHomes(homesData);
+
+      // Collect all unique user IDs
+      const allUserIds = new Set<number>();
+      homesData.forEach(home => {
+        home.users_id.forEach(id => allUserIds.add(id));
+      });
+
+      // Fetch usernames for all user IDs
+      const usernameMap: Record<number, string> = {};
+      await Promise.all(
+        Array.from(allUserIds).map(async (userId) => {
+          try {
+            const userRes = await usersAPI.getById(userId);
+            usernameMap[userId] = userRes.data.username;
+          } catch {
+            usernameMap[userId] = `User ${userId}`;
+          }
+        })
+      );
+      setUsernames(usernameMap);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to load homes'));
     } finally {
@@ -298,9 +320,10 @@ export function HomesPage() {
                                     (home.users_id ?? []).map((memberId) => {
                                       const isOwner = home.owner_id === memberId;
                                       const canRemove = user?.sub === home.owner_id && !isOwner;
+                                      const username = usernames[memberId] || `User ${memberId}`;
                                       return (
                                         <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
-                                          <Chip size="small" label={`User ${memberId}${isOwner ? ' (owner)' : ''}`} />
+                                          <Chip size="small" label={`${username}${isOwner ? ' (owner)' : ''}`} />
                                           <Tooltip title={canRemove ? 'Remove user' : isOwner ? 'Owner cannot be removed' : 'Only owner can remove'}>
                                             <span>
                                               <IconButton

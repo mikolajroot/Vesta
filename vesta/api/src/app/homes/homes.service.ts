@@ -27,7 +27,9 @@ export class HomesService {
   }
 
   async getAllHomes(userId: number): Promise<Home[] | null> {
-    return this.prisma.home.findMany({ where: { users_id: { has: userId } } });
+    return await this.prisma.home.findMany({
+      where: { users_id: { has: userId } }
+    });
   }
 
   async updatehomeName(

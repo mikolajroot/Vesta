@@ -25,4 +25,11 @@ export class UsersService {
     await this.prisma.users.delete({ where: { id: userId}})
     return { message: "User successfully deleted"}
   }
+
+  async findById(id: number): Promise<Pick<Users, 'id' | 'username' | 'role'> | null> {
+    return await this.prisma.users.findUnique({
+      where: { id },
+      select: { id: true, username: true, role: true }
+    });
+  }
 }
