@@ -16,6 +16,10 @@ import {
   IconButton,
   Alert,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import EditIcon from '@mui/icons-material/Edit';
@@ -166,6 +170,40 @@ export function RoomsPage() {
       setError(null);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to create room'));
+    }
+  };
+
+    const handleUpdateRoom = async (
+    values: UpdateRoomForm,
+    helpers: FormikHelpers<UpdateRoomForm>,
+  ) => {
+    if (!selectedRoom) return;
+    try {
+      await roomsAPI.update(selectedRoom.id, values);
+      if (selectedHome) {
+        await fetchRooms(selectedHome);
+      }
+      setEditDialogOpen(false);
+      setSelectedRoom(null);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update room'));
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!roomToDelete) return;
+    try {
+      await roomsAPI.delete(roomToDelete);
+      if (selectedHome) {
+        await fetchRooms(selectedHome);
+      }
+      setDeleteDialogOpen(false);
+      setRoomToDelete(null);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to delete room'));
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -377,6 +415,98 @@ export function RoomsPage() {
           </Paper>
         </Grid>
       </Grid>
+      {/* Edit Room Dialog */}
+      <Dialog open={editDialogOpen} onClose={closeEditDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Room</DialogTitle>
+        <DialogContent>
+          {selectedRoom && (
+            <Formik
+              initialValues={{
+                name: selectedRoom.name,
+                type: selectedRoom.type,
+                floor: selectedRoom.floor,
+                area: selectedRoom.area,
+              }}
+              validationSchema={updateRoomSchema}
+              onSubmit={handleUpdateRoom}
+            >
+              {({ errors, touched, isSubmitting }) => (
+                <Form>
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    <Field
+                      as={TextField}
+                      name="name"
+                      label="Room Name"
+                      fullWidth
+                      error={touched.name && Boolean(errors.name)}
+                      helperText={touched.name && errors.name}
+                    />
+                    <Field
+                      as={TextField}
+                      name="type"
+                      label="Room Type"
+                      select
+                      fullWidth
+                      error={touched.type && Boolean(errors.type)}
+                      helperText={touched.type && errors.type}
+                    >
+                      {roomTypes.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Field>
+                    <Field
+                      as={TextField}
+                      name="floor"
+                      label="Floor"
+                      type="number"
+                      fullWidth
+                      error={touched.floor && Boolean(errors.floor)}
+                      helperText={touched.floor && errors.floor}
+                    />
+                    <Field
+                      as={TextField}
+                      name="area"
+                      label="Area (m²)"
+                      type="number"
+                      fullWidth
+                      error={touched.area && Boolean(errors.area)}
+                      helperText={touched.area && errors.area}
+                    />
+                    <Stack direction="row" spacing={2} justifyContent="flex-end">
+                      <Button onClick={closeEditDialog}>Cancel</Button>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={isSubmitting}
+                      >
+                        Update
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </Form>
+              )}
+            </Formik>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Room</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this room? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleDeleteRoom} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
