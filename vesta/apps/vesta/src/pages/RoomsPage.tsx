@@ -13,8 +13,13 @@ import {
   TextField,
   MenuItem,
   Chip,
+  IconButton,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { Formik, Form, Field, FormikHelpers } from 'formik';
 
 function getErrorMessage(err: unknown, fallback: string) {
@@ -64,8 +69,7 @@ const createRoomSchema = Yup.object({
   area: Yup.number()
     .required('Area is required')
     .positive('Area must be positive'),
-  home_id: Yup.number()
-    .required('Home is required'),
+  home_id: Yup.number().required('Home is required'),
 });
 
 const updateRoomSchema = Yup.object({
@@ -91,11 +95,10 @@ export function RoomsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedHome, setSelectedHome] = useState<number | null>(null);
-
-
-
-
-
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -166,11 +169,24 @@ export function RoomsPage() {
     }
   };
 
+  const openEditDialog = (room: Room) => {
+    setSelectedRoom(room);
+    setEditDialogOpen(true);
+  };
 
+  const closeEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedRoom(null);
+  };
 
+  const getRoomTypeLabel = (type: string) => {
+    return roomTypes.find((rt) => rt.value === type)?.label || type;
+  };
 
-
-
+  const requestDeleteRoom = (roomId: number) => {
+    setRoomToDelete(roomId);
+    setDeleteDialogOpen(true);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -199,7 +215,6 @@ export function RoomsPage() {
             </Stack>
           </Paper>
         </Grid>
-
         {/* Create Room Form */}
         {user && user.role === 'Admin' && selectedHome && (
           <Grid size={{ xs: 12, md: 6 }}>
@@ -277,8 +292,91 @@ export function RoomsPage() {
               </Formik>
             </Paper>
           </Grid>
-        )}
+        )}{' '}
+        {/* Rooms List */}
+        <Grid size={{ xs: 12, md: user && user.role === 'Admin' ? 6 : 12 }}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Rooms in Selected Home
+            </Typography>
+            {error && (
+              <Alert
+                severity="error"
+                sx={{ mb: 2 }}
+                onClose={() => setError(null)}
+              >
+                {error}
+              </Alert>
+            )}
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : rooms.length === 0 ? (
+              <Typography color="text.secondary" sx={{ py: 2 }}>
+                No rooms yet.{' '}
+                {user && user.role === 'Admin' ? 'Create one to begin.' : ''}
+              </Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {rooms.map((room) => (
+                  <Grid size={{ xs: 12 }} key={room.id}>
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        spacing={2}
+                      >
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6">{room.name}</Typography>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mt: 1 }}
+                            flexWrap="wrap"
+                            useFlexGap
+                          >
+                            <Chip
+                              size="small"
+                              label={getRoomTypeLabel(room.type)}
+                            />
+                            <Chip size="small" label={`Floor ${room.floor}`} />
+                            <Chip size="small" label={`${room.area} m²`} />
+                            <Chip
+                              size="small"
+                              label={`${room.Devices?.length || 0} devices`}
+                              color="primary"
+                            />
+                          </Stack>
+                        </Box>
+                        {user && user.role === 'Admin' && (
+                          <Stack direction="row" spacing={1}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => openEditDialog(room)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => requestDeleteRoom(room.id)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Stack>
+                        )}
+                      </Stack>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Paper>
         </Grid>
+      </Grid>
     </Box>
   );
 }
