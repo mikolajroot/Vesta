@@ -10,8 +10,23 @@ import {
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Form, useNavigate } from 'react-router-dom';
-import { Box, Button, Chip, Grid, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Grid,
+  IconButton,
+  MenuItem,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import DevicesIcon from '@mui/icons-material/Devices';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { Field, Formik, FormikHelpers } from 'formik';
 
 function getErrorMessage(err: unknown, fallback: string) {
@@ -87,6 +102,10 @@ export function DevicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedHome, setSelectedHome] = useState<number | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deviceToDelete, setDeviceToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -170,7 +189,7 @@ export function DevicesPage() {
     }
   };
 
-   const handleCreateDevice = async (
+  const handleCreateDevice = async (
     values: CreateDeviceForm,
     helpers: FormikHelpers<CreateDeviceForm>,
   ) => {
@@ -185,6 +204,82 @@ export function DevicesPage() {
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to create device'));
     }
+  };
+
+  const handleUpdateDevice = async (
+    values: UpdateDeviceForm,
+    helpers: FormikHelpers<UpdateDeviceForm>,
+  ) => {
+    if (!selectedDevice) return;
+    try {
+      await devicesAPI.update(selectedDevice.id, values);
+      if (selectedRoom) {
+        await fetchDevices(selectedRoom);
+      }
+      setEditDialogOpen(false);
+      setSelectedDevice(null);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update device'));
+    }
+  };
+
+    const getDeviceTypeLabel = (type: string) => {
+    return deviceTypes.find((dt) => dt.value === type)?.label || type;
+  };
+
+  const getDeviceStatusLabel = (status: string) => {
+    return deviceStatuses.find((ds) => ds.value === status)?.label || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'on':
+        return 'success';
+      case 'off':
+        return 'default';
+      case 'unavailable':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+    const handleDeleteDevice = async () => {
+    if (!deviceToDelete) return;
+    try {
+      await devicesAPI.delete(deviceToDelete);
+      if (selectedRoom) {
+        await fetchDevices(selectedRoom);
+      }
+      setDeleteDialogOpen(false);
+      setDeviceToDelete(null);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to delete device'));
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const openEditDialog = (device: Device) => {
+    setSelectedDevice(device);
+    setEditDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedDevice(null);
+  };
+
+
+
+  const requestDeleteDevice = (deviceId: number) => {
+    setDeviceToDelete(deviceId);
+    setDeleteDialogOpen(true);
+  };
+
+  const getRoomName = (roomId: number) => {
+    return rooms.find((r) => r.id === roomId)?.name || 'Unknown Room';
   };
 
 
@@ -238,7 +333,7 @@ export function DevicesPage() {
           </Grid>
         )}
 
-          {/* Create Device Form */}
+        {/* Create Device Form */}
         {user && user.role === 'Admin' && selectedRoom && (
           <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 2 }}>
@@ -321,8 +416,105 @@ export function DevicesPage() {
             </Paper>
           </Grid>
         )}
-      </Grid>
 
+        {/* Devices List */}
+        <Grid
+          size={{
+            xs: 12,
+            md: user && user.role === 'Admin' && selectedRoom ? 6 : 12,
+          }}
+        >
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Devices in Selected Room
+            </Typography>
+            {error && (
+              <Alert
+                severity="error"
+                sx={{ mb: 2 }}
+                onClose={() => setError(null)}
+              >
+                {error}
+              </Alert>
+            )}
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : !selectedRoom ? (
+              <Typography color="text.secondary" sx={{ py: 2 }}>
+                Please select a room to view devices.
+              </Typography>
+            ) : devices.length === 0 ? (
+              <Typography color="text.secondary" sx={{ py: 2 }}>
+                No devices yet.{' '}
+                {user && user.role === 'Admin' ? 'Create one to begin.' : ''}
+              </Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {devices.map((device) => (
+                  <Grid size={{ xs: 12 }} key={device.id}>
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        spacing={2}
+                      >
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6">{device.name}</Typography>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mt: 1 }}
+                            flexWrap="wrap"
+                            useFlexGap
+                          >
+                            <Chip
+                              size="small"
+                              label={getDeviceTypeLabel(device.type)}
+                            />
+                            <Chip
+                              size="small"
+                              label={getDeviceStatusLabel(device.status)}
+                              color={getStatusColor(device.status)}
+                            />
+                            {device.mqtt_topic && (
+                              <Chip
+                                size="small"
+                                label={`MQTT: ${device.mqtt_topic}`}
+                                variant="outlined"
+                              />
+                            )}
+                          </Stack>
+                        </Box>
+                        {user && user.role === 'Admin' && (
+                          <Stack direction="row" spacing={1}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => openEditDialog(device)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => requestDeleteDevice(device.id)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Stack>
+                        )}
+                      </Stack>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 }
