@@ -4,6 +4,7 @@ import { RegisterPage } from '../pages/RegisterPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { HomesPage } from '../pages/HomesPage';
 import { RoomsPage } from '../pages/RoomsPage';
+import { DevicesPage } from '../pages/DevicesPage';
 import { Layout } from '../components/Layout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
@@ -55,16 +56,16 @@ export function App() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
+      <Route
         path="/devices"
         element={
           <ProtectedRoute>
             <Layout>
-              <DashboardPage />
+              <DevicesPage />
             </Layout>
           </ProtectedRoute>
         }
-      /> */}
+      />
     </Routes>
   );
 }
