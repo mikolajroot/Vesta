@@ -16,6 +16,10 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   MenuItem,
@@ -515,6 +519,105 @@ export function DevicesPage() {
           </Paper>
         </Grid>
       </Grid>
+
+            {/* Edit Device Dialog */}
+      <Dialog open={editDialogOpen} onClose={closeEditDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Device</DialogTitle>
+        <DialogContent>
+          {selectedDevice && (
+            <Formik
+              initialValues={{
+                name: selectedDevice.name,
+                type: selectedDevice.type,
+                status: selectedDevice.status,
+                room_id: selectedDevice.room_id,
+                mqtt_topic: selectedDevice.mqtt_topic || '',
+              }}
+              validationSchema={updateDeviceSchema}
+              onSubmit={handleUpdateDevice}
+            >
+              {({ errors, touched, isSubmitting }) => (
+                <Form>
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    <Field
+                      as={TextField}
+                      name="name"
+                      label="Device Name"
+                      fullWidth
+                      error={touched.name && Boolean(errors.name)}
+                      helperText={touched.name && errors.name}
+                    />
+                    <Field
+                      as={TextField}
+                      name="type"
+                      label="Device Type"
+                      select
+                      fullWidth
+                      error={touched.type && Boolean(errors.type)}
+                      helperText={touched.type && errors.type}
+                    >
+                      {deviceTypes.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Field>
+                    <Field
+                      as={TextField}
+                      name="status"
+                      label="Status"
+                      select
+                      fullWidth
+                      error={touched.status && Boolean(errors.status)}
+                      helperText={touched.status && errors.status}
+                    >
+                      {deviceStatuses.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Field>
+                    <Field
+                      as={TextField}
+                      name="mqtt_topic"
+                      label="MQTT Topic (optional)"
+                      fullWidth
+                      error={touched.mqtt_topic && Boolean(errors.mqtt_topic)}
+                      helperText={touched.mqtt_topic && errors.mqtt_topic}
+                    />
+                    <Stack direction="row" spacing={2} justifyContent="flex-end">
+                      <Button onClick={closeEditDialog}>Cancel</Button>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={isSubmitting}
+                      >
+                        Update
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </Form>
+              )}
+            </Formik>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Device</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this device? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleDeleteDevice} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
