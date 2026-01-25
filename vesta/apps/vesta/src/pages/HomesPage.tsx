@@ -68,6 +68,8 @@ export function HomesPage() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [selectedHome, setSelectedHome] = useState<Home | null>(null);
   const [usernames, setUsernames] = useState<Record<number, string>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [homeToDelete, setHomeToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -155,8 +157,7 @@ export function HomesPage() {
     }
   };
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [homeToDelete, setHomeToDelete] = useState<number | null>(null);
+
 
   const requestDeleteHome = (homeId: number) => {
     setHomeToDelete(homeId);

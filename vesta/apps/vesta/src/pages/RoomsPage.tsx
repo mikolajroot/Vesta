@@ -24,6 +24,11 @@ import {
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import livingRoomIcon from '../assets/living-room.svg';
+import bedroomIcon from '../assets/bedroom.svg';
+import kitchenIcon from '../assets/kitchen.svg';
+import bathroomIcon from '../assets/bathroom.svg';
+import garageIcon from '../assets/garage.svg';
 import { Formik, Form, Field, FormikHelpers } from 'formik';
 
 function getErrorMessage(err: unknown, fallback: string) {
@@ -221,6 +226,40 @@ export function RoomsPage() {
     return roomTypes.find((rt) => rt.value === type)?.label || type;
   };
 
+  const getRoomTypeIcon = (type: string) => {
+    let iconSrc = '';
+    switch (type) {
+      case 'LIVING_ROOM':
+        iconSrc = livingRoomIcon;
+        break;
+      case 'BEDROOM':
+        iconSrc = bedroomIcon;
+        break;
+      case 'KITCHEN':
+        iconSrc = kitchenIcon;
+        break;
+      case 'BATHROOM':
+        iconSrc = bathroomIcon;
+        break;
+      case 'GARAGE':
+        iconSrc = garageIcon;
+        break;
+      default:
+        iconSrc = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E';
+    }
+    return (
+      <img
+        src={iconSrc}
+        alt={type}
+        style={{
+          width: '20px',
+          height: '20px',
+          marginRight: '4px',
+        }}
+      />
+    );
+  };
+
   const requestDeleteRoom = (roomId: number) => {
     setRoomToDelete(roomId);
     setDeleteDialogOpen(true);
@@ -377,6 +416,7 @@ export function RoomsPage() {
                           >
                             <Chip
                               size="small"
+                              icon={getRoomTypeIcon(room.type)}
                               label={getRoomTypeLabel(room.type)}
                             />
                             <Chip size="small" label={`Floor ${room.floor}`} />
