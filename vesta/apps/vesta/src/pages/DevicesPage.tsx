@@ -9,7 +9,7 @@ import {
   Home,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Form, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -31,7 +31,7 @@ import {
 import DevicesIcon from '@mui/icons-material/Devices';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Field, Formik, FormikHelpers } from 'formik';
+import { Field, Formik, Form as FormikForm, FormikHelpers } from 'formik';
 
 function getErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === 'object') {
@@ -163,8 +163,11 @@ export function DevicesPage() {
       const res = await roomsAPI.getAll(homeId, user.sub);
       const roomsData = res.data || [];
       setRooms(roomsData);
-      if (roomsData.length > 0 && !selectedRoom) {
+      if (roomsData.length > 0) {
         setSelectedRoom(roomsData[0].id);
+      } else {
+        setSelectedRoom(null);
+        setDevices([]);
       }
     } catch (err) {
       const status = (err as any)?.response?.status;
@@ -357,7 +360,7 @@ export function DevicesPage() {
                 enableReinitialize
               >
                 {({ errors, touched, isSubmitting }) => (
-                  <Form>
+                  <FormikForm>
                     <Stack spacing={2}>
                       <Field
                         as={TextField}
@@ -414,7 +417,7 @@ export function DevicesPage() {
                         Create Device
                       </Button>
                     </Stack>
-                  </Form>
+                  </FormikForm>
                 )}
               </Formik>
             </Paper>
@@ -537,7 +540,7 @@ export function DevicesPage() {
               onSubmit={handleUpdateDevice}
             >
               {({ errors, touched, isSubmitting }) => (
-                <Form>
+                <FormikForm>
                   <Stack spacing={2} sx={{ mt: 2 }}>
                     <Field
                       as={TextField}
@@ -596,7 +599,7 @@ export function DevicesPage() {
                       </Button>
                     </Stack>
                   </Stack>
-                </Form>
+                </FormikForm>
               )}
             </Formik>
           )}
