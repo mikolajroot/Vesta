@@ -3,10 +3,14 @@ import { PrismaService } from '../../prisma.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { Devices } from '../../generated/prisma/client';
 import { UpdateDeviceDto } from './dto/update-device.dto';
+import { DevicesGateway } from './devices.gateway';
 
 @Injectable()
 export class DevicesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private devicesGateway: DevicesGateway,
+  ) {}
 
   async create(createDeviceDto: CreateDeviceDto): Promise<{ message: string }> {
     const existingRoom = await this.prisma.room.findFirst({
@@ -41,7 +45,22 @@ export class DevicesService {
       throw new NotFoundException('Device not found');
     }
 
-    await this.prisma.devices.update({ where: { id: device_id }, data: updateDto });
+    const updated = await this.prisma.devices.update({
+      where: { id: device_id },
+      data: updateDto,
+      include: { Room: true },
+    });
+
+    this.devicesGateway.broadcastDeviceUpdate({
+      deviceId: updated.id,
+      roomId: updated.room_id,
+      status: updated.status || '',
+      name: updated.name || '',
+      type: updated.type || '',
+      changedBy: 0,
+      timestamp: new Date(),
+    });
+
     return { message: 'device updated successfully' };
   }
 
