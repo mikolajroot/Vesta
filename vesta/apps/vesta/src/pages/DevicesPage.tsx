@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import * as Yup from 'yup';
 import {
   devicesAPI,
@@ -32,6 +32,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Field, Formik, Form as FormikForm, FormikHelpers } from 'formik';
+import { useDeviceWebSocket } from '../hooks/useDeviceWebSocket';
 
 function getErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === 'object') {
@@ -108,8 +109,12 @@ export function DevicesPage() {
   const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<number | null>(null);
+  const { updateDevice: emitDeviceUpdate } = useDeviceWebSocket(
+    selectedRoom,
+    handleWebSocketDeviceUpdate,
+  );
 
   useEffect(() => {
     if (!user) {
@@ -231,7 +236,7 @@ export function DevicesPage() {
     }
   };
 
-    const getDeviceTypeLabel = (type: string) => {
+  const getDeviceTypeLabel = (type: string) => {
     return deviceTypes.find((dt) => dt.value === type)?.label || type;
   };
 
@@ -252,7 +257,7 @@ export function DevicesPage() {
     }
   };
 
-    const handleDeleteDevice = async () => {
+  const handleDeleteDevice = async () => {
     if (!deviceToDelete) return;
     try {
       await devicesAPI.delete(deviceToDelete);
@@ -278,8 +283,6 @@ export function DevicesPage() {
     setSelectedDevice(null);
   };
 
-
-
   const requestDeleteDevice = (deviceId: number) => {
     setDeviceToDelete(deviceId);
     setDeleteDialogOpen(true);
@@ -289,6 +292,36 @@ export function DevicesPage() {
     return rooms.find((r) => r.id === roomId)?.name || 'Unknown Room';
   };
 
+  function handleWebSocketDeviceUpdate(data: any) {
+    setDevices((prevDevices) =>
+      prevDevices.map((device) =>
+        device.id === data.deviceId
+          ? { ...device, status: data.status }
+          : device,
+      ),
+    );
+  }
+
+  const toggleLightStatus = useCallback(
+    async (device: Device) => {
+      if (device.type !== 'light') return;
+
+      const newStatus = device.status === 'on' ? 'off' : 'on';
+
+      try {
+
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: newStatus,
+        });
+
+        emitDeviceUpdate(device.id, newStatus, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to toggle light'));
+      }
+    },
+    [emitDeviceUpdate],
+  );
 
   return (
     <Box sx={{ p: 3 }}>
@@ -481,11 +514,21 @@ export function DevicesPage() {
                               size="small"
                               label={getDeviceTypeLabel(device.type)}
                             />
-                            <Chip
-                              size="small"
-                              label={getDeviceStatusLabel(device.status)}
-                              color={getStatusColor(device.status)}
-                            />
+                            {device.type === 'light' ? (
+                              <Chip
+                                size="small"
+                                label={getDeviceStatusLabel(device.status)}
+                                color={getStatusColor(device.status)}
+                                onClick={() => toggleLightStatus(device)}
+                                sx={{ cursor: 'pointer' }}
+                              />
+                            ) : (
+                              <Chip
+                                size="small"
+                                label={getDeviceStatusLabel(device.status)}
+                                color={getStatusColor(device.status)}
+                              />
+                            )}
                             {device.mqtt_topic && (
                               <Chip
                                 size="small"
@@ -523,7 +566,7 @@ export function DevicesPage() {
         </Grid>
       </Grid>
 
-            {/* Edit Device Dialog */}
+      {/* Edit Device Dialog */}
       <Dialog open={editDialogOpen} onClose={closeEditDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Device</DialogTitle>
         <DialogContent>
