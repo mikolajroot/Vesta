@@ -50,7 +50,6 @@ interface CreateDeviceForm {
   type: string;
   status: string;
   room_id: number;
-  mqtt_topic: string;
 }
 
 interface UpdateDeviceForm {
@@ -58,7 +57,6 @@ interface UpdateDeviceForm {
   type: string;
   status: string;
   room_id: number;
-  mqtt_topic: string;
 }
 
 const deviceTypes = [
@@ -66,6 +64,7 @@ const deviceTypes = [
   { value: 'thermostat', label: 'Thermostat' },
   { value: 'lock', label: 'Lock' },
   { value: 'camera', label: 'Camera' },
+  { value: 'temp_sensor', label: 'Temperature Sensor' },
   { value: 'sensor', label: 'Sensor' },
   { value: 'switch', label: 'Switch' },
   { value: 'other', label: 'Other' },
@@ -84,7 +83,6 @@ const createDeviceSchema = Yup.object({
   type: Yup.string().required('Device type is required'),
   status: Yup.string().required('Device status is required'),
   room_id: Yup.number().required('Room is required'),
-  mqtt_topic: Yup.string().optional(),
 });
 
 const updateDeviceSchema = Yup.object({
@@ -94,7 +92,6 @@ const updateDeviceSchema = Yup.object({
   type: Yup.string().required('Device type is required'),
   status: Yup.string().required('Device status is required'),
   room_id: Yup.number().required('Room is required'),
-  mqtt_topic: Yup.string().optional(),
 });
 
 export function DevicesPage() {
@@ -386,7 +383,6 @@ export function DevicesPage() {
                   type: 'light',
                   status: 'off',
                   room_id: selectedRoom,
-                  mqtt_topic: '',
                 }}
                 validationSchema={createDeviceSchema}
                 onSubmit={handleCreateDevice}
@@ -433,14 +429,6 @@ export function DevicesPage() {
                           </MenuItem>
                         ))}
                       </Field>
-                      <Field
-                        as={TextField}
-                        name="mqtt_topic"
-                        label="MQTT Topic (optional)"
-                        fullWidth
-                        error={touched.mqtt_topic && Boolean(errors.mqtt_topic)}
-                        helperText={touched.mqtt_topic && errors.mqtt_topic}
-                      />
                       <Button
                         type="submit"
                         variant="contained"
@@ -577,7 +565,6 @@ export function DevicesPage() {
                 type: selectedDevice.type,
                 status: selectedDevice.status,
                 room_id: selectedDevice.room_id,
-                mqtt_topic: selectedDevice.mqtt_topic || '',
               }}
               validationSchema={updateDeviceSchema}
               onSubmit={handleUpdateDevice}
@@ -623,14 +610,6 @@ export function DevicesPage() {
                         </MenuItem>
                       ))}
                     </Field>
-                    <Field
-                      as={TextField}
-                      name="mqtt_topic"
-                      label="MQTT Topic (optional)"
-                      fullWidth
-                      error={touched.mqtt_topic && Boolean(errors.mqtt_topic)}
-                      helperText={touched.mqtt_topic && errors.mqtt_topic}
-                    />
                     <Stack direction="row" spacing={2} justifyContent="flex-end">
                       <Button onClick={closeEditDialog}>Cancel</Button>
                       <Button
