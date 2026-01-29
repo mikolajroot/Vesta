@@ -22,9 +22,4 @@ export class CreateDeviceDto {
   @IsNumber()
   @IsNotEmpty()
   room_id: number;
-
-  @ApiProperty({ example: 'home/living-room/light', description: 'MQTT topic', required: false })
-  @IsString()
-  @IsOptional()
-  mqtt_topic?: string;
 }

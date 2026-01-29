@@ -6,12 +6,14 @@ export class UpdateDeviceDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @ApiProperty({ example: 'light', description: 'Device type' })
   @IsString()
   @IsNotEmpty()
-  type: string;
+  @IsOptional()
+  type?: string;
 
   @ApiProperty({ example: 'on', description: 'Device status', required: false })
   @IsString()
@@ -21,5 +23,6 @@ export class UpdateDeviceDto {
   @ApiProperty({ example: 1, description: 'Room ID' })
   @IsNumber()
   @IsNotEmpty()
-  room_id: number;
+  @IsOptional()
+  room_id?: number;
 }
