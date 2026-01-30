@@ -100,6 +100,9 @@ export function DevicesPage() {
   const [homes, setHomes] = useState<Home[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [tempSensorReadings, setTempSensorReadings] = useState<
+    Record<number, string>
+  >({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedHome, setSelectedHome] = useState<number | null>(null);
@@ -186,7 +189,17 @@ export function DevicesPage() {
     setError(null);
     try {
       const res = await devicesAPI.getAll(roomId);
-      setDevices(res.data || []);
+      const devicesData = res.data || [];
+      setDevices(devicesData);
+      setTempSensorReadings((prev) => {
+        const next = { ...prev };
+        devicesData.forEach((device) => {
+          if (device.type === 'temp_sensor' && isNumericStatus(device.status)) {
+            next[device.id] = device.status as string;
+          }
+        });
+        return next;
+      });
     } catch (err) {
       const status = (err as any)?.response?.status;
       if (status === 401 || status === 403) {
@@ -241,6 +254,25 @@ export function DevicesPage() {
     return deviceStatuses.find((ds) => ds.value === status)?.label || status;
   };
 
+  const isNumericStatus = (status?: string | null) => {
+    if (status === null || status === undefined) return false;
+    return status !== '' && !Number.isNaN(Number(status));
+  };
+
+  const getTempSensorStatusLabel = (device: Device) => {
+    if (isNumericStatus(device.status)) return `${device.status}°C`;
+    const lastReading = tempSensorReadings[device.id];
+    if (lastReading) return `${lastReading}°C`;
+    return 'No reading';
+  };
+
+  const getTempSensorStatusColor = (device: Device) => {
+    if (device.status === 'off') return 'default';
+    if (device.status === 'on') return 'success';
+    if (isNumericStatus(device.status)) return 'info';
+    return 'default';
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'on':
@@ -285,9 +317,7 @@ export function DevicesPage() {
     setDeleteDialogOpen(true);
   };
 
-  const getRoomName = (roomId: number) => {
-    return rooms.find((r) => r.id === roomId)?.name || 'Unknown Room';
-  };
+
 
   function handleWebSocketDeviceUpdate(data: any) {
     setDevices((prevDevices) =>
@@ -297,6 +327,12 @@ export function DevicesPage() {
           : device,
       ),
     );
+    if (data.type === 'temp_sensor' && isNumericStatus(data.status)) {
+      setTempSensorReadings((prev) => ({
+        ...prev,
+        [data.deviceId]: data.status,
+      }));
+    }
   }
 
   const toggleLightStatus = useCallback(
@@ -315,6 +351,26 @@ export function DevicesPage() {
         emitDeviceUpdate(device.id, newStatus, device.name, device.type);
       } catch (err) {
         setError(getErrorMessage(err, 'Failed to toggle light'));
+      }
+    },
+    [emitDeviceUpdate],
+  );
+
+  const toggleTempSensorStatus = useCallback(
+    async (device: Device) => {
+      if (device.type !== 'temp_sensor') return;
+
+      const nextStatus = device.status === 'off' ? 'on' : 'off';
+
+      try {
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: nextStatus,
+        });
+
+        emitDeviceUpdate(device.id, nextStatus, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to toggle sensor'));
       }
     },
     [emitDeviceUpdate],
@@ -508,6 +564,14 @@ export function DevicesPage() {
                                 label={getDeviceStatusLabel(device.status)}
                                 color={getStatusColor(device.status)}
                                 onClick={() => toggleLightStatus(device)}
+                                sx={{ cursor: 'pointer' }}
+                              />
+                            ) : device.type === 'temp_sensor' ? (
+                              <Chip
+                                size="small"
+                                label={getTempSensorStatusLabel(device)}
+                                color={getTempSensorStatusColor(device)}
+                                onClick={() => toggleTempSensorStatus(device)}
                                 sx={{ cursor: 'pointer' }}
                               />
                             ) : (
