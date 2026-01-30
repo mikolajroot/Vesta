@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { Devices } from '../../generated/prisma/client';
@@ -20,6 +20,36 @@ export class DevicesService {
   }
 
   async create(createDto: CreateDeviceDto): Promise<{ message: string }> {
+    switch (createDto.type) {
+      case 'temp_sensor': {
+        const existingTempSensor = await this.prisma.devices.findFirst({
+          where: { room_id: createDto.room_id, type: 'temp_sensor' },
+          select: { id: true },
+        });
+
+        if (existingTempSensor) {
+          throw new BadRequestException(
+            'Only one temperature sensor is allowed per room.',
+          );
+        }
+        break;
+      }
+
+      case 'thermostat': {
+        const existingThermostat = await this.prisma.devices.findFirst({
+          where: { room_id: createDto.room_id, type: 'thermostat' },
+          select: { id: true },
+        });
+
+        if (existingThermostat) {
+          throw new BadRequestException(
+            'Only one thermostat is allowed per room.',
+          );
+        }
+        break;
+      }
+    }
+
     let mqttTopic: string | undefined;
     if (createDto.type === 'temp_sensor') {
       const uuid = randomUUID();
