@@ -8,10 +8,16 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class DevicesService {
+  private mqttService: any; 
+
   constructor(
     private prisma: PrismaService,
     private devicesGateway: DevicesGateway,
   ) {}
+
+  setMqttService(mqttService: any) {
+    this.mqttService = mqttService;
+  }
 
   async create(createDto: CreateDeviceDto): Promise<{ message: string }> {
     let mqttTopic: string | undefined;
@@ -26,6 +32,10 @@ export class DevicesService {
         mqtt_topic: mqttTopic,
       },
     });
+
+    if (mqttTopic && this.mqttService) {
+      await this.mqttService.addTemperatureSensor(mqttTopic);
+    }
 
     return { message: 'device created successfully' };
   }
@@ -82,7 +92,6 @@ export class DevicesService {
     return { message: 'device deleted successfully' };
   }
 
-
   async updateTemperature(
     mqttTopic: string,
     temperature: number,
@@ -96,11 +105,17 @@ export class DevicesService {
       return;
     }
 
+    if (device.status === 'off') {
+      console.log(`Sensor ${device.name} is off, ignoring temperature update`);
+      return;
+    }
+
     const updated = await this.prisma.devices.update({
       where: { id: device.id },
       data: { status: temperature.toString() },
     });
 
+    console.log(`Updated device ${device.name} temperature to ${temperature}°C`);
 
     this.devicesGateway.broadcastDeviceUpdate({
       deviceId: updated.id,
