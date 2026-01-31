@@ -56,7 +56,6 @@ interface CreateDeviceForm {
 
 interface UpdateDeviceForm {
   name: string;
-  type: string;
   status: string;
   room_id: number;
 }
@@ -91,7 +90,6 @@ const updateDeviceSchema = Yup.object({
   name: Yup.string()
     .required('Device name is required')
     .min(3, 'Name must be at least 3 characters'),
-  type: Yup.string().required('Device type is required'),
   status: Yup.string().required('Device status is required'),
   room_id: Yup.number().required('Room is required'),
 });
@@ -723,7 +721,6 @@ export function DevicesPage() {
             <Formik
               initialValues={{
                 name: selectedDevice.name,
-                type: selectedDevice.type,
                 status: selectedDevice.status,
                 room_id: selectedDevice.room_id,
               }}
@@ -741,21 +738,6 @@ export function DevicesPage() {
                       error={touched.name && Boolean(errors.name)}
                       helperText={touched.name && errors.name}
                     />
-                    <Field
-                      as={TextField}
-                      name="type"
-                      label="Device Type"
-                      select
-                      fullWidth
-                      error={touched.type && Boolean(errors.type)}
-                      helperText={touched.type && errors.type}
-                    >
-                      {deviceTypes.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Field>
                     <Field
                       as={TextField}
                       name="status"
