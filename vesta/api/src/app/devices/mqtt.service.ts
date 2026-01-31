@@ -32,7 +32,8 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
-      this.startTemperatureSimulation();
+
+      setTimeout(() => this.startTemperatureSimulation(), 2000);
     });
 
     this.client.on('message', async (topic, payload) => {
@@ -66,18 +67,24 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async startTemperatureSimulation() {
-    const tempSensors = await this.prisma.devices.findMany({
-      where: { type: 'temp_sensor' },
-    });
+    try {
+      const tempSensors = await this.prisma.devices.findMany({
+        where: { type: 'temp_sensor' },
+      });
 
-    console.log(`Found ${tempSensors.length} temperature sensors`);
-    
-    tempSensors.forEach((sensor) => {
-      if (sensor.mqtt_topic) {
-        console.log(`Starting simulation for: ${sensor.mqtt_topic}`);
-        this.startSensorSimulation(sensor.mqtt_topic);
-      }
-    });
+      console.log(`Found ${tempSensors.length} temperature sensors`);
+      
+      tempSensors.forEach((sensor) => {
+        if (sensor.mqtt_topic) {
+          console.log(`Starting simulation for: ${sensor.mqtt_topic}`);
+          this.startSensorSimulation(sensor.mqtt_topic);
+        }
+      });
+    } catch (error) {
+      console.error('Error starting temperature simulation, retrying in 5s:', error);
+
+      setTimeout(() => this.startTemperatureSimulation(), 5000);
+    }
   }
 
   private startSensorSimulation(topic: string) {
