@@ -7,6 +7,7 @@ import { PrismaService } from '../../prisma.service';
 export class MqttService implements OnModuleInit, OnModuleDestroy {
   private client: mqtt.MqttClient;
   private temperatureIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private temperatureState: Map<string, number> = new Map();
 
   constructor(
     private devicesService: DevicesService,
@@ -85,12 +86,42 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       clearInterval(existingInterval);
     }
 
-    const interval = setInterval(() => {
-      const randomTemp = (Math.random() * 15 + 15).toFixed(1);
-      
-      const payload = JSON.stringify({ msg: randomTemp });
-      this.client.publish(topic, payload);
-      console.log(`Published to ${topic}: ${payload}`);
+    if (!this.temperatureState.has(topic)) {
+      this.temperatureState.set(topic, Math.random() * 6 + 20); // 20–26°C initial
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const sensor = await this.prisma.devices.findFirst({
+          where: { mqtt_topic: topic, type: 'temp_sensor' },
+        });
+
+        if (!sensor) return;
+
+        const thermostat = await this.prisma.devices.findFirst({
+          where: { room_id: sensor.room_id, type: 'thermostat' },
+        });
+
+        let current = this.temperatureState.get(topic) ?? 22;
+        const setpoint =
+          thermostat && thermostat.status !== 'off' && !Number.isNaN(Number(thermostat.status))
+            ? Number(thermostat.status)
+            : null;
+
+        if (setpoint !== null && current < setpoint) {
+          current += 0.2 + Math.random() * 0.4;
+        } else {
+          current += (Math.random() - 0.5) * 0.6; 
+        }
+
+        current = Math.max(10, Math.min(35, current));
+        this.temperatureState.set(topic, current);
+
+        const payload = JSON.stringify({ msg: current.toFixed(1) });
+        this.client.publish(topic, payload);
+      } catch (err) {
+        console.error('Sensor simulation error:', err);
+      }
     }, 5000);
 
     this.temperatureIntervals.set(topic, interval);
