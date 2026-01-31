@@ -33,6 +33,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Field, Formik, Form as FormikForm, FormikHelpers } from 'formik';
 import { useDeviceWebSocket } from '../hooks/useDeviceWebSocket';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 function getErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === 'object') {
@@ -115,6 +117,9 @@ export function DevicesPage() {
     selectedRoom,
     handleWebSocketDeviceUpdate,
   );
+  const [thermostatSetpoints, setThermostatSetpoints] = useState<
+    Record<number, string>
+  >({});
 
   useEffect(() => {
     if (!user) {
@@ -195,6 +200,15 @@ export function DevicesPage() {
         const next = { ...prev };
         devicesData.forEach((device) => {
           if (device.type === 'temp_sensor' && isNumericStatus(device.status)) {
+            next[device.id] = device.status as string;
+          }
+        });
+        return next;
+      });
+      setThermostatSetpoints((prev) => {
+        const next = { ...prev };
+        devicesData.forEach((device) => {
+          if (device.type === 'thermostat' && isNumericStatus(device.status)) {
             next[device.id] = device.status as string;
           }
         });
@@ -317,8 +331,6 @@ export function DevicesPage() {
     setDeleteDialogOpen(true);
   };
 
-
-
   function handleWebSocketDeviceUpdate(data: any) {
     setDevices((prevDevices) =>
       prevDevices.map((device) =>
@@ -329,6 +341,12 @@ export function DevicesPage() {
     );
     if (data.type === 'temp_sensor' && isNumericStatus(data.status)) {
       setTempSensorReadings((prev) => ({
+        ...prev,
+        [data.deviceId]: data.status,
+      }));
+    }
+    if (data.type === 'thermostat' && isNumericStatus(data.status)) {
+      setThermostatSetpoints((prev) => ({
         ...prev,
         [data.deviceId]: data.status,
       }));
@@ -376,6 +394,61 @@ export function DevicesPage() {
     [emitDeviceUpdate],
   );
 
+  const toggleThermostatPower = useCallback(
+    async (device: Device) => {
+      if (device.type !== 'thermostat') return;
+
+      const lastSet = thermostatSetpoints[device.id] ?? '22';
+      const nextStatus = device.status === 'off' ? lastSet : 'off';
+
+      try {
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: nextStatus,
+        });
+        emitDeviceUpdate(device.id, nextStatus, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to toggle thermostat'));
+      }
+    },
+    [emitDeviceUpdate, thermostatSetpoints],
+  );
+
+  const changeThermostatSetpoint = useCallback(
+    async (device: Device, delta: number) => {
+      if (device.type !== 'thermostat') return;
+      if (device.status === 'off') return;
+
+      const current = isNumericStatus(device.status)
+        ? Number(device.status)
+        : Number(thermostatSetpoints[device.id] ?? 22);
+
+      const next = (current + delta).toFixed(1);
+
+      try {
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: next,
+        });
+        emitDeviceUpdate(device.id, next, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to update setpoint'));
+      }
+    },
+    [emitDeviceUpdate, thermostatSetpoints],
+  );
+
+  const getThermostatStatusColor = (device: Device) => {
+    if (device.status === 'off') return 'default';
+    if (isNumericStatus(device.status)) return 'info';
+    return 'default';
+  };
+
+  const getThermostatStatusLabel = (device: Device) => {
+    if (device.status === 'off') return 'Off';
+    if (isNumericStatus(device.status)) return `${device.status}°C`;
+    return 'Unknown';
+  };
   return (
     <Box sx={{ p: 3 }}>
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
@@ -574,6 +647,30 @@ export function DevicesPage() {
                                 onClick={() => toggleTempSensorStatus(device)}
                                 sx={{ cursor: 'pointer' }}
                               />
+                            ) : device.type === 'thermostat' ? (
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => changeThermostatSetpoint(device, -0.5)}
+                                  disabled={device.status === 'off'}
+                                >
+                                  <RemoveIcon fontSize="small" />
+                                </IconButton>
+                                <Chip
+                                  size="small"
+                                  label={getThermostatStatusLabel(device)}
+                                  color={getThermostatStatusColor(device)}
+                                  onClick={() => toggleThermostatPower(device)}
+                                  sx={{ cursor: 'pointer' }}
+                                />
+                                <IconButton
+                                  size="small"
+                                  onClick={() => changeThermostatSetpoint(device, 0.5)}
+                                  disabled={device.status === 'off'}
+                                >
+                                  <AddIcon fontSize="small" />
+                                </IconButton>
+                              </Stack>
                             ) : (
                               <Chip
                                 size="small"
