@@ -35,7 +35,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
-
       this.client.subscribe('camera/motion/+', (err) => {
         if (err) {
           console.error('Camera MQTT subscription error:', err);
@@ -52,23 +51,35 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
     this.client.on('message', async (topic, payload) => {
       try {
-        console.log(`Received MQTT message on ${topic}:`, payload.toString());
-        
         const payloadStr = payload.toString();
-        let temperature: number;
+        console.log(`Received MQTT message on ${topic}:`, payloadStr);
 
-        try {
-          const json = JSON.parse(payloadStr);
-          temperature = parseFloat(json.msg || json.temperature || json.temp || json.value);
-        } catch {
-          temperature = parseFloat(payloadStr);
+        if (topic.startsWith('sensors/temp/')) {
+          let temperature: number;
+
+          try {
+            const json = JSON.parse(payloadStr);
+            temperature = parseFloat(json.msg || json.temperature || json.temp || json.value);
+          } catch {
+            temperature = parseFloat(payloadStr);
+          }
+
+          if (!isNaN(temperature)) {
+            await this.devicesService.updateTemperature(topic, temperature);
+            console.log(`Temperature update: ${topic} = ${temperature}°C`);
+          } else {
+            console.warn(`Invalid temperature value received: ${payloadStr}`);
+          }
         }
+        
+        else if (topic.startsWith('camera/motion/')) {
+          try {
+            const json = JSON.parse(payloadStr);
+            console.log(`Camera motion event: ${topic} - motion: ${json.motion}`);
 
-        if (!isNaN(temperature)) {
-          await this.devicesService.updateTemperature(topic, temperature);
-          console.log(`Temperature update: ${topic} = ${temperature}°C`);
-        } else {
-          console.warn(`Invalid temperature value received: ${payloadStr}`);
+          } catch (err) {
+            console.warn(`Invalid camera motion payload: ${payloadStr}`);
+          }
         }
       } catch (error) {
         console.error('Error processing MQTT message:', error);
