@@ -2,16 +2,19 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import * as mqtt from 'mqtt';
 import { DevicesService } from './devices.service';
 import { PrismaService } from '../../prisma.service';
+import { DevicesGateway } from './devices.gateway';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
   private client: mqtt.MqttClient;
   private temperatureIntervals: Map<string, NodeJS.Timeout> = new Map();
   private temperatureState: Map<string, number> = new Map();
+  private cameraIntervals: Map<number, NodeJS.Timeout> = new Map();
 
   constructor(
     private devicesService: DevicesService,
     private prisma: PrismaService,
+    private devicesGateway: DevicesGateway,
   ) {}
 
   async onModuleInit() {
@@ -32,8 +35,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
-
-      setTimeout(() => this.startTemperatureSimulation(), 2000);
+      setTimeout(() => {
+        this.startTemperatureSimulation();
+        this.startCameraSimulations();
+      }, 2000);
     });
 
     this.client.on('message', async (topic, payload) => {
@@ -118,7 +123,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         if (setpoint !== null && current < setpoint) {
           current += 0.2 + Math.random() * 0.4;
         } else {
-          current += (Math.random() - 0.5) * 0.6; 
+          current += (Math.random() - 0.5) * 0.6;
         }
 
         current = Math.max(10, Math.min(35, current));
@@ -134,9 +139,76 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     this.temperatureIntervals.set(topic, interval);
   }
 
+  private async startCameraSimulations() {
+    try {
+      const cameras = await this.prisma.devices.findMany({
+        where: { type: 'camera' },
+      });
+
+      console.log(`Found ${cameras.length} cameras`);
+      
+      cameras.forEach((camera) => {
+        console.log(`Starting camera simulation for: ${camera.name}`);
+        this.startCameraSimulation(camera.id,);
+      });
+    } catch (error) {
+      console.error('Error starting camera simulation, retrying in 5s:', error);
+      setTimeout(() => this.startCameraSimulations(), 5000);
+    }
+  }
+
+  private startCameraSimulation(deviceId: number) {
+    const existingInterval = this.cameraIntervals.get(deviceId);
+    if (existingInterval !== undefined) {
+      clearInterval(existingInterval);
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const device = await this.prisma.devices.findFirst({
+          where: { id: deviceId, type: 'camera' },
+        });
+
+        if (!device || device.status === 'off') return;
+
+      
+        const motionDetected = Math.random() < 0.2;
+        const status = motionDetected ? 'motion' : 'idle';
+
+        const updated = await this.prisma.devices.update({
+          where: { id: deviceId },
+          data: { status },
+        });
+
+        this.devicesGateway.broadcastDeviceUpdate({
+          deviceId: updated.id,
+          roomId: updated.room_id,
+          status: updated.status ?? '',
+          name: updated.name,
+          type: updated.type,
+          changedBy: 0,
+          timestamp: new Date(),
+        });
+
+        if (motionDetected) {
+          console.log(`Camera ${device.name}: Motion detected!`);
+        }
+      } catch (err) {
+        console.error(`Camera simulation error for device ${deviceId}:`, err);
+      }
+    }, 3000);
+
+    this.cameraIntervals.set(deviceId, interval);
+  }
+
   async addTemperatureSensor(mqttTopic: string) {
     console.log(`Adding new temperature sensor: ${mqttTopic}`);
     this.startSensorSimulation(mqttTopic);
+  }
+
+  async addCamera(deviceId: number) {
+    console.log(`Adding new camera: ${deviceId}`);
+    this.startCameraSimulation(deviceId);
   }
 
   async onModuleDestroy() {
@@ -144,6 +216,11 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       clearInterval(interval);
     });
     this.temperatureIntervals.clear();
+
+    this.cameraIntervals.forEach((interval) => {
+      clearInterval(interval);
+    });
+    this.cameraIntervals.clear();
 
     if (this.client) {
       this.client.end();
