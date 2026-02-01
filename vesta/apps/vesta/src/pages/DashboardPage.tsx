@@ -76,18 +76,17 @@ export function DashboardPage() {
   };
 
   const stats = useMemo(() => {
-    const totalRooms = homes.reduce((sum, h) => sum + (h.Room?.length || 0), 0);
-    const totalDevices = homes.reduce(
-      (sum, h) =>
-        sum + (h.Room?.reduce((rSum, r) => rSum + (r.Devices?.length || 0), 0) || 0),
-      0,
-    );
-    const totalMembers = homes.reduce((sum, h) => sum + (h.users_id?.length || 0), 0);
+
+    const uniqueMembers = new Set<number>();
+    homes.forEach((h) => {
+      h.users_id?.forEach((userId) => {
+        uniqueMembers.add(userId);
+      });
+    });
+
     return {
       homes: homes.length,
-      rooms: totalRooms,
-      devices: totalDevices,
-      members: totalMembers,
+      members: uniqueMembers.size,
     };
   }, [homes]);
 
@@ -166,12 +165,6 @@ export function DashboardPage() {
               label: 'Homes',
               value: stats.homes,
               icon: <AddHomeIcon color="primary" />, }, {
-              label: 'Rooms',
-              value: stats.rooms,
-              icon: <MeetingRoomIcon color="secondary" />, }, {
-              label: 'Devices',
-              value: stats.devices,
-              icon: <DevicesOtherIcon color="action" />, }, {
               label: 'Members',
               value: stats.members,
               icon: <GroupIcon color="success" />, },
