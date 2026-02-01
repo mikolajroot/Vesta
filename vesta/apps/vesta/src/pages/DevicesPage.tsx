@@ -66,8 +66,6 @@ const deviceTypes = [
   { value: 'lock', label: 'Lock' },
   { value: 'camera', label: 'Camera' },
   { value: 'temp_sensor', label: 'Temperature Sensor' },
-  { value: 'sensor', label: 'Sensor' },
-  { value: 'switch', label: 'Switch' },
   { value: 'other', label: 'Other' },
 ];
 
