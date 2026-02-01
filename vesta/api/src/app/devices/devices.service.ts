@@ -51,20 +51,29 @@ export class DevicesService {
     }
 
     let mqttTopic: string | undefined;
-    if (createDto.type === 'temp_sensor') {
-      const uuid = randomUUID();
-      mqttTopic = `sensors/temp/${uuid}`;
+    
+    switch (createDto.type) {
+      case 'temp_sensor':
+        mqttTopic = `sensors/temp/${randomUUID()}`;
+        break;
+      case 'camera':
+        mqttTopic = `camera/motion/${randomUUID()}`;
+        break;
     }
 
-    await this.prisma.devices.create({
+    const device = await this.prisma.devices.create({
       data: {
         ...createDto,
         mqtt_topic: mqttTopic,
       },
     });
 
-    if (mqttTopic && this.mqttService) {
+    if (createDto.type === 'temp_sensor' && mqttTopic && this.mqttService) {
       await this.mqttService.addTemperatureSensor(mqttTopic);
+    }
+
+    if (createDto.type === 'camera' && mqttTopic && this.mqttService) {
+      await this.mqttService.addCamera(device.id, mqttTopic);
     }
 
     return { message: 'device created successfully' };

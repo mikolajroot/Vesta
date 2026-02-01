@@ -35,6 +35,15 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
+
+      this.client.subscribe('camera/motion/+', (err) => {
+        if (err) {
+          console.error('Camera MQTT subscription error:', err);
+        } else {
+          console.log('Subscribed to camera/motion/+');
+        }
+      });
+
       setTimeout(() => {
         this.startTemperatureSimulation();
         this.startCameraSimulations();
@@ -148,8 +157,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       console.log(`Found ${cameras.length} cameras`);
       
       cameras.forEach((camera) => {
-        console.log(`Starting camera simulation for: ${camera.name}`);
-        this.startCameraSimulation(camera.id,);
+        if (camera.mqtt_topic) {
+          console.log(`Starting camera simulation for: ${camera.name}`);
+          this.startCameraSimulation(camera.id, camera.mqtt_topic);
+        }
       });
     } catch (error) {
       console.error('Error starting camera simulation, retrying in 5s:', error);
@@ -157,7 +168,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private startCameraSimulation(deviceId: number) {
+  private startCameraSimulation(deviceId: number, mqttTopic: string) {
     const existingInterval = this.cameraIntervals.get(deviceId);
     if (existingInterval !== undefined) {
       clearInterval(existingInterval);
@@ -171,7 +182,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
         if (!device || device.status === 'off') return;
 
-      
         const motionDetected = Math.random() < 0.2;
         const status = motionDetected ? 'motion' : 'idle';
 
@@ -179,6 +189,13 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
           where: { id: deviceId },
           data: { status },
         });
+
+        const payload = JSON.stringify({
+          motion: motionDetected,
+          timestamp: new Date().toISOString(),
+          camera_id: deviceId,
+        });
+        this.client.publish(mqttTopic, payload);
 
         this.devicesGateway.broadcastDeviceUpdate({
           deviceId: updated.id,
@@ -191,7 +208,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         });
 
         if (motionDetected) {
-          console.log(`Camera ${device.name}: Motion detected!`);
+          console.log(`Camera ${device.name}: Motion detected! Published to ${mqttTopic}`);
         }
       } catch (err) {
         console.error(`Camera simulation error for device ${deviceId}:`, err);
@@ -206,9 +223,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     this.startSensorSimulation(mqttTopic);
   }
 
-  async addCamera(deviceId: number) {
-    console.log(`Adding new camera: ${deviceId}`);
-    this.startCameraSimulation(deviceId);
+  async addCamera(deviceId: number, mqttTopic: string) {
+    console.log(`Adding new camera: ${deviceId} with topic: ${mqttTopic}`);
+    this.startCameraSimulation(deviceId, mqttTopic);
   }
 
   async onModuleDestroy() {
