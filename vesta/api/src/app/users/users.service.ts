@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { Roles, Users } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma.service';
 @Injectable()
@@ -19,6 +19,23 @@ export class UsersService {
     });
 
 
+  }
+
+    async updateUsername(userId: number, newUsername: string): Promise<{ message: string }> {
+    const existingUser = await this.prisma.users.findUnique({
+      where: { username: newUsername },
+    });
+
+    if (existingUser && existingUser.id !== userId) {
+      throw new ConflictException('Username is already taken');
+    }
+
+    await this.prisma.users.update({
+      where: { id: userId },
+      data: { username: newUsername },
+    });
+
+    return { message: 'Username updated successfully' };
   }
 
   async deleteAccount(userId: number) : Promise<{ message: string }>{
