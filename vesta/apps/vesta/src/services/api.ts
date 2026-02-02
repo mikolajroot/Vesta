@@ -9,7 +9,6 @@ export const api = axios.create({
   },
 });
 
-
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -27,7 +26,7 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Types
@@ -93,14 +92,14 @@ export const authAPI = {
 
 // Users API
 export const usersAPI = {
-  getById: (userId: number) =>
-    api.get<Pick<User, 'sub' | 'username' | 'role'>>(`/users/${userId}`),
+  getMe: () => api.get('/users/me'),
+  updateUsername: (username: string) =>
+    api.put('/users/username', { username }),
 };
 
 // Homes API
 export const homesAPI = {
-  getAll: (userId: number) =>
-    api.get<Home[]>(`/homes?userId=${userId}`),
+  getAll: (userId: number) => api.get<Home[]>(`/homes?userId=${userId}`),
   create: (name: string, userId: number) =>
     api.post<Home>('/homes', { name, userId }),
   delete: (id: number, ownerId: number) =>
@@ -113,7 +112,9 @@ export const homesAPI = {
       user_id: userId,
     }),
   removeUser: (homeId: number, userId: number, ownerId: number) =>
-    api.delete<Home>(`/homes/${homeId}/users/${userId}`, { params: { ownerId } }),
+    api.delete<Home>(`/homes/${homeId}/users/${userId}`, {
+      params: { ownerId },
+    }),
 };
 
 // Rooms API
@@ -129,14 +130,12 @@ export const roomsAPI = {
   }) => api.post<Room>('/rooms', data),
   update: (id: number, data: Partial<Room>) =>
     api.patch<Room>(`/rooms/${id}`, data),
-  delete: (id: number) =>
-    api.delete(`/rooms/${id}`),
+  delete: (id: number) => api.delete(`/rooms/${id}`),
 };
 
 // Devices API
 export const devicesAPI = {
-  getAll: (roomId: number) =>
-    api.get<Device[]>(`/devices?roomId=${roomId}`),
+  getAll: (roomId: number) => api.get<Device[]>(`/devices?roomId=${roomId}`),
   create: (data: {
     name: string;
     type: string;
@@ -146,6 +145,5 @@ export const devicesAPI = {
   }) => api.post<Device>('/devices', data),
   update: (id: number, data: Partial<Device>) =>
     api.patch<Device>(`/devices/${id}`, data),
-  delete: (id: number) =>
-    api.delete(`/devices/${id}`),
+  delete: (id: number) => api.delete(`/devices/${id}`),
 };

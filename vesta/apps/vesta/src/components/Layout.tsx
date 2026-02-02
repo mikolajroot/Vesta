@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -13,6 +13,12 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -20,8 +26,10 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import EditIcon from '@mui/icons-material/Edit';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usersAPI } from '../services/api';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,9 +38,12 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [changeNameOpen, setChangeNameOpen] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -50,6 +61,43 @@ export function Layout({ children }: LayoutProps) {
     logout();
     navigate('/login');
     handleMenuClose();
+  };
+
+  const handleChangeNameOpen = () => {
+    setNewUsername(user?.username || '');
+    setChangeNameOpen(true);
+    handleMenuClose();
+  };
+
+  const handleChangeNameClose = () => {
+    setChangeNameOpen(false);
+    setNewUsername('');
+    setError(null);
+  };
+
+  const handleChangeNameSubmit = async () => {
+    if (!newUsername.trim()) {
+      setError('Username cannot be empty');
+      return;
+    }
+
+    if (newUsername.length < 3) {
+      setError('Username must be at least 3 characters');
+      return;
+    }
+
+    try {
+      await usersAPI.updateUsername(newUsername);
+      console.log('Username updated successfully');
+
+      await refreshUser();
+      console.log('User data refreshed');
+
+      handleChangeNameClose();
+    } catch (err: any) {
+      console.error('Error updating username:', err);
+      setError(err.response?.data?.message || 'Failed to update username');
+    }
   };
 
   const navigationItems = [
@@ -109,6 +157,10 @@ export function Layout({ children }: LayoutProps) {
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
           >
+            <MenuItem onClick={handleChangeNameOpen}>
+              <EditIcon sx={{ mr: 1 }} />
+              Change Username
+            </MenuItem>
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
               Logout
@@ -156,6 +208,34 @@ export function Layout({ children }: LayoutProps) {
         <Toolbar />
         {children}
       </Box>
+
+      {/* Change Username Dialog */}
+      <Dialog open={changeNameOpen} onClose={handleChangeNameClose} maxWidth="xs" fullWidth>
+        <DialogTitle>Change Username</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="New Username"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
+            error={Boolean(error)}
+            helperText={error}
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleChangeNameClose}>Cancel</Button>
+          <Button onClick={handleChangeNameSubmit} variant="contained">
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
+
+

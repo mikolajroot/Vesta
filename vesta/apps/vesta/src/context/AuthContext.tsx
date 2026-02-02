@@ -1,5 +1,5 @@
 import  { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authAPI, User } from '../services/api';
+import { authAPI, User} from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   error: string | null;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,6 +79,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('user');
   };
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const response = await authAPI.getProfile();
+      const userData = response.data;
+      console.log('Refreshed user data:', userData);
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+    }
+  };
+
   return (
     <AuthContext
       value={{
@@ -88,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         loading,
         error,
+        refreshUser,
       }}
     >
       {children}
