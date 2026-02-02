@@ -6,6 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Room {
@@ -48,6 +49,8 @@ model Devices {
   room_id    Int
   mqtt_topic String?  @db.VarChar
   created_at DateTime @default(now()) @db.Timestamptz(6)
+  energy_kwh Float    @default(0)
+  power_w    Float    @default(0)
   Room       Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
 }
 

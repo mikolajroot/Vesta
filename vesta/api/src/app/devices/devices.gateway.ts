@@ -18,6 +18,14 @@ interface DeviceUpdate {
   timestamp: Date;
 }
 
+interface EnergyUpdate {
+  deviceId: number;
+  roomId: number;
+  powerW: number;
+  energyKwh: number;
+  timestamp: Date;
+}
+
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000', 'http://localhost:4200', 'http://localhost:5173'],
@@ -68,5 +76,9 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   broadcastDeviceUpdate(data: DeviceUpdate) {
     this.server.to(`room-${data.roomId}`).emit('deviceUpdated', data);
+  }
+
+  broadcastEnergyUpdate(data: EnergyUpdate) {
+    this.server.to(`room-${data.roomId}`).emit('energyUpdate', data);
   }
 }

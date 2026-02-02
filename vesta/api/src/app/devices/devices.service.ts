@@ -76,6 +76,10 @@ export class DevicesService {
       await this.mqttService.addCamera(device.id, mqttTopic);
     }
 
+    if (this.mqttService) {
+      await this.mqttService.addDevice(device.id);
+    }
+
     return { message: 'device created successfully' };
   }
 
@@ -163,6 +167,37 @@ export class DevicesService {
       name: updated.name,
       type: updated.type,
       changedBy: 0,
+      timestamp: new Date(),
+    });
+  }
+
+  async updateEnergy(
+    deviceId: number,
+    powerW: number,
+    energyKwh: number,
+  ): Promise<void> {
+    const device = await this.prisma.devices.findFirst({
+      where: { id: deviceId },
+    });
+
+    if (!device) {
+      console.warn(`No device found with id: ${deviceId}`);
+      return;
+    }
+
+    const updated = await this.prisma.devices.update({
+      where: { id: deviceId },
+      data: {
+        power_w: powerW,
+        energy_kwh: energyKwh,
+      },
+    });
+
+    this.devicesGateway.broadcastEnergyUpdate({
+      deviceId: updated.id,
+      roomId: updated.room_id,
+      powerW: updated.power_w,
+      energyKwh: updated.energy_kwh,
       timestamp: new Date(),
     });
   }
