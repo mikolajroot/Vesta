@@ -297,12 +297,6 @@ export function HomesPage() {
                                 variant="body2"
                                 color="text.secondary"
                               >
-                                Rooms: {home.Room?.length ?? 0}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
                                 Members: {home.users_id?.length ?? 0}
                               </Typography>
                               <Stack direction="row" spacing={1} sx={{ mt: 1 }}>

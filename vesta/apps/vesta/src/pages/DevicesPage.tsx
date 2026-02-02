@@ -445,6 +445,52 @@ export function DevicesPage() {
     if (isNumericStatus(device.status)) return `${device.status}°C`;
     return 'Unknown';
   };
+
+  const getCameraStatusLabel = (device: Device) => {
+    switch (device.status) {
+      case 'motion':
+        return 'Motion Detected';
+      case 'idle':
+        return 'Idle';
+      case 'off':
+        return 'Off';
+      default:
+        return device.status;
+    }
+  };
+
+  const getCameraStatusColor = (device: Device) => {
+    switch (device.status) {
+      case 'motion':
+        return 'error';
+      case 'idle':
+        return 'success';
+      case 'off':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
+
+  const toggleCameraStatus = useCallback(
+    async (device: Device) => {
+      if (device.type !== 'camera') return;
+
+      const newStatus = device.status === 'off' ? 'idle' : 'off';
+
+      try {
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: newStatus,
+        });
+        emitDeviceUpdate(device.id, newStatus, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to toggle camera'));
+      }
+    },
+    [emitDeviceUpdate],
+  );
+
   return (
     <Box sx={{ p: 3 }}>
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
@@ -667,6 +713,14 @@ export function DevicesPage() {
                                   <AddIcon fontSize="small" />
                                 </IconButton>
                               </Stack>
+                            ) : device.type === 'camera' ? (
+                              <Chip
+                                size="small"
+                                label={getCameraStatusLabel(device)}
+                                color={getCameraStatusColor(device)}
+                                onClick={() => toggleCameraStatus(device)}
+                                sx={{ cursor: 'pointer' }}
+                              />
                             ) : (
                               <Chip
                                 size="small"

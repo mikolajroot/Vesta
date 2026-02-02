@@ -421,11 +421,6 @@ export function RoomsPage() {
                             />
                             <Chip size="small" label={`Floor ${room.floor}`} />
                             <Chip size="small" label={`${room.area} m²`} />
-                            <Chip
-                              size="small"
-                              label={`${room.Devices?.length || 0} devices`}
-                              color="primary"
-                            />
                           </Stack>
                         </Box>
                         {user && user.role === 'Admin' && (
