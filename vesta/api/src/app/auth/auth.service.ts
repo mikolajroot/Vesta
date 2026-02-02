@@ -50,4 +50,18 @@ export class AuthService {
     const payload = { sub: user.id, username: user.username, role: user.role };
     return { access_token: await this.jwtService.signAsync(payload) };
   }
+
+    async getProfile(req: any) {
+    const user = await this.usersService.findById(req.user.sub);
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+    };
+  }
 }

@@ -66,6 +66,6 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @Get('profile')
   getProfile(@Request() req: AuthenticatedRequest) {
-    return req.user;
+    return this.authService.getProfile(req);
   }
 }
