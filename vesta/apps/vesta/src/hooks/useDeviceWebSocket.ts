@@ -11,9 +11,19 @@ interface DeviceUpdate {
   timestamp: Date;
 }
 
+interface DeviceCreated {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+  room_id: number;
+  mqtt_topic?: string;
+  created_at: string;
+}
+
 export function useDeviceWebSocket(
   roomId: number | null,
-  onDeviceUpdate: (data: DeviceUpdate) => void,
+  onDeviceUpdate: (data: DeviceUpdate | { type: string; data: DeviceCreated }) => void,
 ) {
   const socketRef = useRef<Socket | null>(null);
 
@@ -39,6 +49,10 @@ export function useDeviceWebSocket(
 
     socket.on('deviceUpdated', (data: DeviceUpdate) => {
       onDeviceUpdate(data);
+    });
+
+    socket.on('deviceCreated', (data: DeviceCreated) => {
+      onDeviceUpdate({ type: 'deviceCreated', data });
     });
 
     socket.on('error', (error) => {

@@ -112,16 +112,97 @@ export function DevicesPage() {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<number | null>(null);
-  const { updateDevice: emitDeviceUpdate } = useDeviceWebSocket(
-    selectedRoom,
-    handleWebSocketDeviceUpdate,
-  );
   const [thermostatSetpoints, setThermostatSetpoints] = useState<
     Record<number, string>
   >({});
   const [humidifierSetpoints, setHumidifierSetpoints] = useState<
     Record<number, string>
   >({});
+
+  const handleWebSocketDeviceUpdate = useCallback((data: any) => {
+    switch (data.type) {
+      case 'deviceCreated': {
+
+        const newDevice = data.data;
+        setDevices((prevDevices) => [newDevice, ...prevDevices]);
+        
+        if (!isNumericStatus(newDevice.status)) return;
+        
+        switch (newDevice.type) {
+          case 'temp_sensor':
+            setTempSensorReadings((prev) => ({
+              ...prev,
+              [newDevice.id]: newDevice.status,
+            }));
+            break;
+          case 'humidity_sensor':
+            setHumiditySensorReadings((prev) => ({
+              ...prev,
+              [newDevice.id]: newDevice.status,
+            }));
+            break;
+          case 'thermostat':
+            setThermostatSetpoints((prev) => ({
+              ...prev,
+              [newDevice.id]: newDevice.status,
+            }));
+            break;
+          case 'humidifier':
+            setHumidifierSetpoints((prev) => ({
+              ...prev,
+              [newDevice.id]: newDevice.status,
+            }));
+            break;
+        }
+        return;
+      }
+
+      default: {
+        
+        setDevices((prevDevices) =>
+          prevDevices.map((device) =>
+            device.id === data.deviceId
+              ? { ...device, status: data.status }
+              : device,
+          ),
+        );
+
+        if (!isNumericStatus(data.status)) return;
+
+        switch (data.type) {
+          case 'temp_sensor':
+            setTempSensorReadings((prev) => ({
+              ...prev,
+              [data.deviceId]: data.status,
+            }));
+            break;
+          case 'humidity_sensor':
+            setHumiditySensorReadings((prev) => ({
+              ...prev,
+              [data.deviceId]: data.status,
+            }));
+            break;
+          case 'thermostat':
+            setThermostatSetpoints((prev) => ({
+              ...prev,
+              [data.deviceId]: data.status,
+            }));
+            break;
+          case 'humidifier':
+            setHumidifierSetpoints((prev) => ({
+              ...prev,
+              [data.deviceId]: data.status,
+            }));
+            break;
+        }
+      }
+    }
+  }, []);
+
+  const { updateDevice: emitDeviceUpdate } = useDeviceWebSocket(
+    selectedRoom,
+    handleWebSocketDeviceUpdate,
+  );
 
   useEffect(() => {
     if (!user) {
@@ -364,40 +445,6 @@ export function DevicesPage() {
     setDeviceToDelete(deviceId);
     setDeleteDialogOpen(true);
   };
-
-  function handleWebSocketDeviceUpdate(data: any) {
-    setDevices((prevDevices) =>
-      prevDevices.map((device) =>
-        device.id === data.deviceId
-          ? { ...device, status: data.status }
-          : device,
-      ),
-    );
-    if (data.type === 'temp_sensor' && isNumericStatus(data.status)) {
-      setTempSensorReadings((prev) => ({
-        ...prev,
-        [data.deviceId]: data.status,
-      }));
-    }
-    if (data.type === 'humidity_sensor' && isNumericStatus(data.status)) {
-      setHumiditySensorReadings((prev) => ({
-        ...prev,
-        [data.deviceId]: data.status,
-      }));
-    }
-    if (data.type === 'thermostat' && isNumericStatus(data.status)) {
-      setThermostatSetpoints((prev) => ({
-        ...prev,
-        [data.deviceId]: data.status,
-      }));
-    }
-    if (data.type === 'humidifier' && isNumericStatus(data.status)) {
-      setHumidifierSetpoints((prev) => ({
-        ...prev,
-        [data.deviceId]: data.status,
-      }));
-    }
-  }
 
   const toggleLightStatus = useCallback(
     async (device: Device) => {
