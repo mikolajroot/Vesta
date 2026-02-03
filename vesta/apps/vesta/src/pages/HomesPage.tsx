@@ -93,13 +93,12 @@ export function HomesPage() {
       const homesData = res.data || [];
       setHomes(homesData);
 
-      // Collect all unique user IDs
+
       const allUserIds = new Set<number>();
       homesData.forEach(home => {
         home.users_id.forEach(id => allUserIds.add(id));
       });
 
-      // Fetch usernames for all user IDs
       const usernameMap: Record<number, string> = {};
       await Promise.all(
         Array.from(allUserIds).map(async (userId) => {

@@ -20,7 +20,7 @@ export function useDeviceWebSocket(
   useEffect(() => {
     if (!roomId) return;
 
-    const socket = io('http://localhost:3000/devices', {
+    const socket = io('https://localhost:3000/devices', {
       auth: {
         token: localStorage.getItem('access_token'),
       },

@@ -1,6 +1,8 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
+import path from 'path';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -8,6 +10,10 @@ export default defineConfig(() => ({
   server: {
     port: 4200,
     host: 'localhost',
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, '../../api/certs/key.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, '../../api/certs/cert.pem')),
+    },
   },
   preview: {
     port: 4300,

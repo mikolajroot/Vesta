@@ -1,12 +1,13 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://localhost:3000/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true
 });
 
 api.interceptors.request.use((config) => {
@@ -93,8 +94,8 @@ export const authAPI = {
 // Users API
 export const usersAPI = {
   getMe: () => api.get('/users/me'),
-  updateUsername: (username: string) =>
-    api.put('/users/username', { username }),
+  updateUsername: (username: string) => api.put('/users/username', { username }),
+  getById: (id: number) => api.get(`/users/${id}`),
 };
 
 // Homes API

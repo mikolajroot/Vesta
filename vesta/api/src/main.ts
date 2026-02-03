@@ -4,12 +4,21 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as fs from 'fs';
+import * as path from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const httpsOptions = {
+    key: fs.readFileSync(path.join(__dirname, '../certs/key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '../certs/cert.pem')),
+  };
+
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions
+  });
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:4200', 'http://localhost:4201', 'http://localhost:5173'],
+    origin: ['https://localhost:3000', 'https://localhost:4200', 'https://localhost:5173'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
