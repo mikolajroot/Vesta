@@ -400,13 +400,15 @@ export function RoomsPage() {
                   <Grid size={{ xs: 12 }} key={room.id}>
                     <Paper variant="outlined" sx={{ p: 2 }}>
                       <Stack
-                        direction="row"
-                        alignItems="center"
+                        direction={{ xs: 'column', sm: 'row' }}
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
                         justifyContent="space-between"
                         spacing={2}
                       >
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6">{room.name}</Typography>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="h6" sx={{ wordBreak: 'break-word' }}>
+                            {room.name}
+                          </Typography>
                           <Stack
                             direction="row"
                             spacing={1}
@@ -424,7 +426,14 @@ export function RoomsPage() {
                           </Stack>
                         </Box>
                         {user && user.role === 'Admin' && (
-                          <Stack direction="row" spacing={1}>
+                          <Stack 
+                            direction="row" 
+                            spacing={1}
+                            sx={{ 
+                              flexShrink: 0,
+                              alignSelf: { xs: 'flex-end', sm: 'center' }
+                            }}
+                          >
                             <IconButton
                               size="small"
                               color="primary"

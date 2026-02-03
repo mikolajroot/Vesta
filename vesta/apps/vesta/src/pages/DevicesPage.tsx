@@ -781,13 +781,15 @@ export function DevicesPage() {
                   <Grid size={{ xs: 12 }} key={device.id}>
                     <Paper variant="outlined" sx={{ p: 2 }}>
                       <Stack
-                        direction="row"
-                        alignItems="center"
+                        direction={{ xs: 'column', sm: 'row' }}
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
                         justifyContent="space-between"
                         spacing={2}
                       >
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6">{device.name}</Typography>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="h6" sx={{ wordBreak: 'break-word' }}>
+                            {device.name}
+                          </Typography>
                           <Stack
                             direction="row"
                             spacing={1}
@@ -891,12 +893,20 @@ export function DevicesPage() {
                                 size="small"
                                 label={`MQTT: ${device.mqtt_topic}`}
                                 variant="outlined"
+                                sx={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
                               />
                             )}
                           </Stack>
                         </Box>
                         {user && user.role === 'Admin' && (
-                          <Stack direction="row" spacing={1}>
+                          <Stack 
+                            direction="row" 
+                            spacing={1}
+                            sx={{ 
+                              flexShrink: 0,
+                              alignSelf: { xs: 'flex-end', sm: 'center' }
+                            }}
+                          >
                             <IconButton
                               size="small"
                               color="primary"

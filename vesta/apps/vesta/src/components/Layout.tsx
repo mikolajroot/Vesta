@@ -110,7 +110,7 @@ export function Layout({ children }: LayoutProps) {
   const drawer = (
     <Box sx={{ width: 250 }}>
       <Box sx={{ p: 2 }}>
-        <Typography variant="h6">Smart Home</Typography>
+        <Typography variant="h6">Vesta</Typography>
       </Box>
       <List>
         {navigationItems.map((item) => (
