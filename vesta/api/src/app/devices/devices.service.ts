@@ -35,6 +35,20 @@ export class DevicesService {
         break;
       }
 
+      case 'humidity_sensor': {
+        const existingHumiditySensor = await this.prisma.devices.findFirst({
+          where: { room_id: createDto.room_id, type: 'humidity_sensor' },
+          select: { id: true },
+        });
+
+        if (existingHumiditySensor) {
+          throw new BadRequestException(
+            'Only one humidity sensor is allowed per room.',
+          );
+        }
+        break;
+      }
+
       case 'thermostat': {
         const existingThermostat = await this.prisma.devices.findFirst({
           where: { room_id: createDto.room_id, type: 'thermostat' },
@@ -48,6 +62,20 @@ export class DevicesService {
         }
         break;
       }
+
+      case 'humidifier': {
+        const existingHumidifier = await this.prisma.devices.findFirst({
+          where: { room_id: createDto.room_id, type: 'humidifier' },
+          select: { id: true },
+        });
+
+        if (existingHumidifier) {
+          throw new BadRequestException(
+            'Only one humidifier is allowed per room.',
+          );
+        }
+        break;
+      }
     }
 
     let mqttTopic: string | undefined;
@@ -55,6 +83,9 @@ export class DevicesService {
     switch (createDto.type) {
       case 'temp_sensor':
         mqttTopic = `sensors/temp/${randomUUID()}`;
+        break;
+      case 'humidity_sensor':
+        mqttTopic = `sensors/humidity/${randomUUID()}`;
         break;
       case 'camera':
         mqttTopic = `camera/motion/${randomUUID()}`;
@@ -70,6 +101,10 @@ export class DevicesService {
 
     if (createDto.type === 'temp_sensor' && mqttTopic && this.mqttService) {
       await this.mqttService.addTemperatureSensor(mqttTopic);
+    }
+
+    if (createDto.type === 'humidity_sensor' && mqttTopic && this.mqttService) {
+      await this.mqttService.addHumiditySensor(mqttTopic);
     }
 
     if (createDto.type === 'camera' && mqttTopic && this.mqttService) {
@@ -155,6 +190,42 @@ export class DevicesService {
     });
 
     console.log(`Updated device ${device.name} temperature to ${temperature}°C`);
+
+    this.devicesGateway.broadcastDeviceUpdate({
+      deviceId: updated.id,
+      roomId: updated.room_id,
+      status: updated.status ?? '',
+      name: updated.name,
+      type: updated.type,
+      changedBy: 0,
+      timestamp: new Date(),
+    });
+  }
+
+  async updateHumidity(
+    mqttTopic: string,
+    humidity: number,
+  ): Promise<void> {
+    const device = await this.prisma.devices.findFirst({
+      where: { mqtt_topic: mqttTopic, type: 'humidity_sensor' },
+    });
+
+    if (!device) {
+      console.warn(`No humidity sensor found for topic: ${mqttTopic}`);
+      return;
+    }
+
+    if (device.status === 'off') {
+      console.log(`Sensor ${device.name} is off, ignoring humidity update`);
+      return;
+    }
+
+    const updated = await this.prisma.devices.update({
+      where: { id: device.id },
+      data: { status: humidity.toString() },
+    });
+
+    console.log(`Updated device ${device.name} humidity to ${humidity}%`);
 
     this.devicesGateway.broadcastDeviceUpdate({
       deviceId: updated.id,

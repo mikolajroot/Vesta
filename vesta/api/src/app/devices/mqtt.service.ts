@@ -10,6 +10,8 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private client: mqtt.MqttClient;
   private temperatureIntervals: Map<string, NodeJS.Timeout> = new Map();
   private temperatureState: Map<string, number> = new Map();
+  private humidityIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private humidityState: Map<string, number> = new Map();
   private cameraIntervals: Map<number, NodeJS.Timeout> = new Map();
 
   constructor(
@@ -44,8 +46,17 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
+      this.client.subscribe('sensors/humidity/+', (err) => {
+        if (err) {
+          console.error('Humidity MQTT subscription error:', err);
+        } else {
+          console.log('Subscribed to sensors/humidity/+');
+        }
+      });
+
       setTimeout(() => {
         this.startTemperatureSimulation();
+        this.startHumiditySimulation();
         this.startCameraSimulations();
       }, 2000);
     });
@@ -82,6 +93,24 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
           }
         }
 
+        else if (topic.startsWith('sensors/humidity/')) {
+          let humidity: number;
+
+          try {
+            const json = JSON.parse(payloadStr);
+            humidity = parseFloat(json.msg || json.humidity || json.value);
+          } catch {
+            humidity = parseFloat(payloadStr);
+          }
+
+          if (!isNaN(humidity)) {
+            await this.devicesService.updateHumidity(topic, humidity);
+            console.log(`Humidity update: ${topic} = ${humidity}%`);
+          } else {
+            console.warn(`Invalid humidity value received: ${payloadStr}`);
+          }
+        }
+
       } catch (error) {
         console.error('Error processing MQTT message:', error);
       }
@@ -111,6 +140,75 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       console.error('Error starting temperature simulation, retrying in 5s:', error);
       setTimeout(() => this.startTemperatureSimulation(), 5000);
     }
+  }
+
+  private async startHumiditySimulation() {
+    try {
+      const humiditySensors = await this.prisma.devices.findMany({
+        where: { type: 'humidity_sensor' },
+      });
+
+      console.log(`Found ${humiditySensors.length} humidity sensors`);
+
+      humiditySensors.forEach((sensor: Devices) => {
+        if (sensor.mqtt_topic) {
+          console.log(`Starting humidity simulation for: ${sensor.mqtt_topic}`);
+          this.startHumiditySensorSimulation(sensor.mqtt_topic);
+        }
+      });
+    } catch (error) {
+      console.error('Error starting humidity simulation, retrying in 5s:', error);
+      setTimeout(() => this.startHumiditySimulation(), 5000);
+    }
+  }
+
+  private startHumiditySensorSimulation(topic: string) {
+    const existingInterval = this.humidityIntervals.get(topic);
+    if (existingInterval !== undefined) {
+      clearInterval(existingInterval);
+    }
+
+    if (!this.humidityState.has(topic)) {
+      this.humidityState.set(topic, Math.random() * 20 + 40); // 40–60% initial
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const sensor = await this.prisma.devices.findFirst({
+          where: { mqtt_topic: topic, type: 'humidity_sensor' },
+        });
+
+        if (!sensor) return;
+
+        const humidifier = await this.prisma.devices.findFirst({
+          where: { room_id: sensor.room_id, type: 'humidifier' },
+        });
+
+        let current = this.humidityState.get(topic) ?? 50;
+        const setpoint =
+          humidifier && humidifier.status !== 'off' && !Number.isNaN(Number(humidifier.status))
+            ? Number(humidifier.status)
+            : null;
+
+        if (setpoint !== null && current < setpoint) {
+          current += 0.3 + Math.random() * 0.5;
+        } else if (setpoint !== null && current > setpoint) {
+          current -= 0.2 + Math.random() * 0.3;
+        } else {
+          current += (Math.random() - 0.5) * 0.6;
+        }
+
+        current = Math.max(20, Math.min(80, current));
+        this.humidityState.set(topic, current);
+
+        const payload = JSON.stringify({ msg: current.toFixed(1) });
+        this.client.publish(topic, payload);
+      } catch (err) {
+        console.error('Humidity sensor simulation error:', err);
+      }
+    }, 5000);
+
+    this.humidityIntervals.set(topic, interval);
   }
 
   private startSensorSimulation(topic: string) {
@@ -237,6 +335,11 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     this.startSensorSimulation(mqttTopic);
   }
 
+  async addHumiditySensor(mqttTopic: string) {
+    console.log(`Adding new humidity sensor: ${mqttTopic}`);
+    this.startHumiditySensorSimulation(mqttTopic);
+  }
+
   async addCamera(deviceId: number, mqttTopic: string) {
     console.log(`Adding new camera: ${deviceId} with topic: ${mqttTopic}`);
     this.startCameraSimulation(deviceId, mqttTopic);
@@ -247,6 +350,11 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       clearInterval(interval);
     });
     this.temperatureIntervals.clear();
+
+    this.humidityIntervals.forEach((interval) => {
+      clearInterval(interval);
+    });
+    this.humidityIntervals.clear();
 
     this.cameraIntervals.forEach((interval) => {
       clearInterval(interval);
