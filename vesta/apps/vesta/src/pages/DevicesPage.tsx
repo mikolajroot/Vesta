@@ -63,16 +63,16 @@ interface UpdateDeviceForm {
 const deviceTypes = [
   { value: 'light', label: 'Light' },
   { value: 'thermostat', label: 'Thermostat' },
-  { value: 'lock', label: 'Lock' },
+  { value: 'humidifier', label: 'Humidifier' },
   { value: 'camera', label: 'Camera' },
   { value: 'temp_sensor', label: 'Temperature Sensor' },
+  { value: 'humidity_sensor', label: 'Humidity Sensor' },
   { value: 'other', label: 'Other' },
 ];
 
 const deviceStatuses = [
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
-  { value: 'unavailable', label: 'Unavailable' },
 ];
 
 const createDeviceSchema = Yup.object({
@@ -101,6 +101,9 @@ export function DevicesPage() {
   const [tempSensorReadings, setTempSensorReadings] = useState<
     Record<number, string>
   >({});
+  const [humiditySensorReadings, setHumiditySensorReadings] = useState<
+    Record<number, string>
+  >({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedHome, setSelectedHome] = useState<number | null>(null);
@@ -114,6 +117,9 @@ export function DevicesPage() {
     handleWebSocketDeviceUpdate,
   );
   const [thermostatSetpoints, setThermostatSetpoints] = useState<
+    Record<number, string>
+  >({});
+  const [humidifierSetpoints, setHumidifierSetpoints] = useState<
     Record<number, string>
   >({});
 
@@ -201,10 +207,28 @@ export function DevicesPage() {
         });
         return next;
       });
+      setHumiditySensorReadings((prev) => {
+        const next = { ...prev };
+        devicesData.forEach((device) => {
+          if (device.type === 'humidity_sensor' && isNumericStatus(device.status)) {
+            next[device.id] = device.status as string;
+          }
+        });
+        return next;
+      });
       setThermostatSetpoints((prev) => {
         const next = { ...prev };
         devicesData.forEach((device) => {
           if (device.type === 'thermostat' && isNumericStatus(device.status)) {
+            next[device.id] = device.status as string;
+          }
+        });
+        return next;
+      });
+      setHumidifierSetpoints((prev) => {
+        const next = { ...prev };
+        devicesData.forEach((device) => {
+          if (device.type === 'humidifier' && isNumericStatus(device.status)) {
             next[device.id] = device.status as string;
           }
         });
@@ -276,7 +300,21 @@ export function DevicesPage() {
     return 'No reading';
   };
 
+  const getHumiditySensorStatusLabel = (device: Device) => {
+    if (isNumericStatus(device.status)) return `${device.status}%`;
+    const lastReading = humiditySensorReadings[device.id];
+    if (lastReading) return `${lastReading}%`;
+    return 'No reading';
+  };
+
   const getTempSensorStatusColor = (device: Device) => {
+    if (device.status === 'off') return 'default';
+    if (device.status === 'on') return 'success';
+    if (isNumericStatus(device.status)) return 'info';
+    return 'default';
+  };
+
+  const getHumiditySensorStatusColor = (device: Device) => {
     if (device.status === 'off') return 'default';
     if (device.status === 'on') return 'success';
     if (isNumericStatus(device.status)) return 'info';
@@ -341,8 +379,20 @@ export function DevicesPage() {
         [data.deviceId]: data.status,
       }));
     }
+    if (data.type === 'humidity_sensor' && isNumericStatus(data.status)) {
+      setHumiditySensorReadings((prev) => ({
+        ...prev,
+        [data.deviceId]: data.status,
+      }));
+    }
     if (data.type === 'thermostat' && isNumericStatus(data.status)) {
       setThermostatSetpoints((prev) => ({
+        ...prev,
+        [data.deviceId]: data.status,
+      }));
+    }
+    if (data.type === 'humidifier' && isNumericStatus(data.status)) {
+      setHumidifierSetpoints((prev) => ({
         ...prev,
         [data.deviceId]: data.status,
       }));
@@ -390,6 +440,26 @@ export function DevicesPage() {
     [emitDeviceUpdate],
   );
 
+  const toggleHumiditySensorStatus = useCallback(
+    async (device: Device) => {
+      if (device.type !== 'humidity_sensor') return;
+
+      const nextStatus = device.status === 'off' ? 'on' : 'off';
+
+      try {
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: nextStatus,
+        });
+
+        emitDeviceUpdate(device.id, nextStatus, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to toggle sensor'));
+      }
+    },
+    [emitDeviceUpdate],
+  );
+
   const toggleThermostatPower = useCallback(
     async (device: Device) => {
       if (device.type !== 'thermostat') return;
@@ -408,6 +478,26 @@ export function DevicesPage() {
       }
     },
     [emitDeviceUpdate, thermostatSetpoints],
+  );
+
+  const toggleHumidifierPower = useCallback(
+    async (device: Device) => {
+      if (device.type !== 'humidifier') return;
+
+      const lastSet = humidifierSetpoints[device.id] ?? '45';
+      const nextStatus = device.status === 'off' ? lastSet : 'off';
+
+      try {
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: nextStatus,
+        });
+        emitDeviceUpdate(device.id, nextStatus, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to toggle humidifier'));
+      }
+    },
+    [emitDeviceUpdate, humidifierSetpoints],
   );
 
   const changeThermostatSetpoint = useCallback(
@@ -434,6 +524,30 @@ export function DevicesPage() {
     [emitDeviceUpdate, thermostatSetpoints],
   );
 
+  const changeHumidifierSetpoint = useCallback(
+    async (device: Device, delta: number) => {
+      if (device.type !== 'humidifier') return;
+      if (device.status === 'off') return;
+
+      const current = isNumericStatus(device.status)
+        ? Number(device.status)
+        : Number(humidifierSetpoints[device.id] ?? 45);
+
+      const next = (current + delta).toFixed(1);
+
+      try {
+        await devicesAPI.update(device.id, {
+          ...device,
+          status: next,
+        });
+        emitDeviceUpdate(device.id, next, device.name, device.type);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to update setpoint'));
+      }
+    },
+    [emitDeviceUpdate, humidifierSetpoints],
+  );
+
   const getThermostatStatusColor = (device: Device) => {
     if (device.status === 'off') return 'default';
     if (isNumericStatus(device.status)) return 'info';
@@ -443,6 +557,18 @@ export function DevicesPage() {
   const getThermostatStatusLabel = (device: Device) => {
     if (device.status === 'off') return 'Off';
     if (isNumericStatus(device.status)) return `${device.status}°C`;
+    return 'Unknown';
+  };
+
+  const getHumidifierStatusColor = (device: Device) => {
+    if (device.status === 'off') return 'default';
+    if (isNumericStatus(device.status)) return 'info';
+    return 'default';
+  };
+
+  const getHumidifierStatusLabel = (device: Device) => {
+    if (device.status === 'off') return 'Off';
+    if (isNumericStatus(device.status)) return `${device.status}%`;
     return 'Unknown';
   };
 
@@ -689,6 +815,14 @@ export function DevicesPage() {
                                 onClick={() => toggleTempSensorStatus(device)}
                                 sx={{ cursor: 'pointer' }}
                               />
+                            ) : device.type === 'humidity_sensor' ? (
+                              <Chip
+                                size="small"
+                                label={getHumiditySensorStatusLabel(device)}
+                                color={getHumiditySensorStatusColor(device)}
+                                onClick={() => toggleHumiditySensorStatus(device)}
+                                sx={{ cursor: 'pointer' }}
+                              />
                             ) : device.type === 'thermostat' ? (
                               <Stack direction="row" spacing={1} alignItems="center">
                                 <IconButton
@@ -708,6 +842,30 @@ export function DevicesPage() {
                                 <IconButton
                                   size="small"
                                   onClick={() => changeThermostatSetpoint(device, 0.5)}
+                                  disabled={device.status === 'off'}
+                                >
+                                  <AddIcon fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            ) : device.type === 'humidifier' ? (
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => changeHumidifierSetpoint(device, -1)}
+                                  disabled={device.status === 'off'}
+                                >
+                                  <RemoveIcon fontSize="small" />
+                                </IconButton>
+                                <Chip
+                                  size="small"
+                                  label={getHumidifierStatusLabel(device)}
+                                  color={getHumidifierStatusColor(device)}
+                                  onClick={() => toggleHumidifierPower(device)}
+                                  sx={{ cursor: 'pointer' }}
+                                />
+                                <IconButton
+                                  size="small"
+                                  onClick={() => changeHumidifierSetpoint(device, 1)}
                                   disabled={device.status === 'off'}
                                 >
                                   <AddIcon fontSize="small" />
