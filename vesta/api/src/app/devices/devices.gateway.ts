@@ -28,7 +28,7 @@ interface EnergyUpdate {
 
 @WebSocketGateway({
   cors: {
-    origin: ['https://localhost:3000', 'https://localhost:4200', 'https://localhost:5173'],
+    origin: ['https://localhost:3000', 'https://localhost:4200', 'https://localhost:5173','http://localhost:4200'],
     credentials: true,
   },
   namespace: 'devices',

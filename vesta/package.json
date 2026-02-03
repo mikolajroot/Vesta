@@ -6,6 +6,7 @@
   "private": true,
   "dependencies": {
     "@mui/icons-material": "^7.3.7",
+    "@mui/x-charts": "^8.27.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/microservices": "^11.1.12",

@@ -11,7 +11,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private temperatureIntervals: Map<string, NodeJS.Timeout> = new Map();
   private temperatureState: Map<string, number> = new Map();
   private cameraIntervals: Map<number, NodeJS.Timeout> = new Map();
-  private energyIntervals: Map<number, NodeJS.Timeout> = new Map();
 
   constructor(
     private devicesService: DevicesService,
@@ -45,18 +44,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
-      this.client.subscribe('sensors/energy/+', (err) => {
-        if (err) {
-          console.error('Energy MQTT subscription error:', err);
-        } else {
-          console.log('Subscribed to sensors/energy/+');
-        }
-      });
-
       setTimeout(() => {
         this.startTemperatureSimulation();
         this.startCameraSimulations();
-        this.startEnergySimulations();
       }, 2000);
     });
 
@@ -92,19 +82,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
           }
         }
 
-        else if (topic.startsWith('sensors/energy/')) {
-          try {
-            const json = JSON.parse(payloadStr);
-            await this.devicesService.updateEnergy(
-              json.device_id,
-              json.power_w,
-              json.energy_kwh
-            );
-            console.log(`Energy update: device ${json.device_id} - ${json.power_w}W, ${json.energy_kwh}kWh`);
-          } catch (err) {
-            console.warn(`Invalid energy payload: ${payloadStr}`);
-          }
-        }
       } catch (error) {
         console.error('Error processing MQTT message:', error);
       }
@@ -115,89 +92,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private getDevicePowerConsumption(type: string, status: string): number {
-    const powerMap: Record<string, { on: number; off: number }> = {
-      light: { on: 10, off: 0 },
-      thermostat: { on: 1500, off: 0 },
-      camera: { on: 8, off: 2 },
-      temp_sensor: { on: 2, off: 0 },
-      lock: { on: 3, off: 1 },
-      other: { on: 50, off: 5 },
-    };
-
-    const device = powerMap[type] || { on: 50, off: 5 };
-    return status === 'on' || (status !== 'off' && status !== 'unavailable') 
-      ? device.on 
-      : device.off;
-  }
-
-  private async startEnergySimulations() {
-    try {
-      const devices = await this.prisma.devices.findMany();
-
-      console.log(`Found ${devices.length} devices for energy monitoring`);
-      
-      devices.forEach((device: Devices) => {
-        console.log(`Starting energy simulation for: ${device.name}`);
-        this.startEnergySimulation(device.id);
-      });
-    } catch (error) {
-      console.error('Error starting energy simulation, retrying in 5s:', error);
-      setTimeout(() => this.startEnergySimulations(), 5000);
-    }
-  }
-
-  private startEnergySimulation(deviceId: number) {
-    const existingInterval = this.energyIntervals.get(deviceId);
-    if (existingInterval !== undefined) {
-      clearInterval(existingInterval);
-    }
-
-    const interval = setInterval(async () => {
-      try {
-        const device = await this.prisma.devices.findFirst({
-          where: { id: deviceId },
-        });
-
-        if (!device) return;
-
-        const powerW = this.getDevicePowerConsumption(device.type, device.status || 'off');
-        
-        const intervalSeconds = 2;
-        const energyIncrement = (powerW * intervalSeconds) / 3600000;
-        const newEnergyKwh = (device.energy_kwh || 0) + energyIncrement;
-
-        const updated = await this.prisma.devices.update({
-          where: { id: deviceId },
-          data: {
-            power_w: powerW,
-            energy_kwh: newEnergyKwh,
-          },
-        });
-
-        const payload = JSON.stringify({
-          device_id: deviceId,
-          power_w: powerW,
-          energy_kwh: parseFloat(newEnergyKwh.toFixed(4)),
-          timestamp: new Date().toISOString(),
-        });
-        
-        this.client.publish(`sensors/energy/${deviceId}`, payload);
-
-        this.devicesGateway.broadcastEnergyUpdate({
-          deviceId: updated.id,
-          roomId: updated.room_id,
-          powerW: updated.power_w,
-          energyKwh: updated.energy_kwh,
-          timestamp: new Date(),
-        });
-      } catch (err) {
-        console.error(`Energy simulation error for device ${deviceId}:`, err);
-      }
-    }, 2000);
-
-    this.energyIntervals.set(deviceId, interval);
-  }
 
   private async startTemperatureSimulation() {
     try {
@@ -348,11 +242,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     this.startCameraSimulation(deviceId, mqttTopic);
   }
 
-  async addDevice(deviceId: number) {
-    console.log(`Adding new device for energy monitoring: ${deviceId}`);
-    this.startEnergySimulation(deviceId);
-  }
-
   async onModuleDestroy() {
     this.temperatureIntervals.forEach((interval) => {
       clearInterval(interval);
@@ -363,11 +252,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       clearInterval(interval);
     });
     this.cameraIntervals.clear();
-
-    this.energyIntervals.forEach((interval) => {
-      clearInterval(interval);
-    });
-    this.energyIntervals.clear();
 
     if (this.client) {
       this.client.end();
