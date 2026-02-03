@@ -173,6 +173,11 @@ export class DevicesService {
       where: { id: device_id },
     });
 
+    this.devicesGateway.broadcastDeviceDeleted({
+      id: device_id,
+      room_id: existing.room_id,
+    });
+
     return { message: 'device deleted successfully' };
   }
 

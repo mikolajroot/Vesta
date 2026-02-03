@@ -36,6 +36,11 @@ interface DeviceCreated {
   created_at: string;
 }
 
+interface DeviceDeleted {
+  id: number;
+  room_id: number;
+}
+
 @WebSocketGateway({
   cors: {
     origin: ['https://localhost:3000', 'https://localhost:4200', 'https://localhost:5173','http://localhost:4200'],
@@ -80,7 +85,7 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
       return;
     }
 
-    this.server.to(`room-${data.roomId}`).emit('deviceUpdated', data);
+  this.server.to(`room-${data.roomId}`).emit('deviceUpdated', data);
     console.log(`Device ${data.deviceId} updated in room ${data.roomId}`);
   }
 
@@ -90,5 +95,9 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   broadcastDeviceCreated(data: DeviceCreated) {
     this.server.to(`room-${data.room_id}`).emit('deviceCreated', data);
+  }
+
+  broadcastDeviceDeleted(data: DeviceDeleted) {
+    this.server.to(`room-${data.room_id}`).emit('deviceDeleted', data);
   }
 }

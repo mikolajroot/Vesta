@@ -21,9 +21,14 @@ interface DeviceCreated {
   created_at: string;
 }
 
+interface DeviceDeleted {
+  id: number;
+  room_id: number;
+}
+
 export function useDeviceWebSocket(
   roomId: number | null,
-  onDeviceUpdate: (data: DeviceUpdate | { type: string; data: DeviceCreated }) => void,
+  onDeviceUpdate: (data: DeviceUpdate | { type: string; data: DeviceCreated | DeviceDeleted }) => void,
 ) {
   const socketRef = useRef<Socket | null>(null);
 
@@ -53,6 +58,10 @@ export function useDeviceWebSocket(
 
     socket.on('deviceCreated', (data: DeviceCreated) => {
       onDeviceUpdate({ type: 'deviceCreated', data });
+    });
+
+    socket.on('deviceDeleted', (data: DeviceDeleted) => {
+      onDeviceUpdate({ type: 'deviceDeleted', data });
     });
 
     socket.on('error', (error) => {

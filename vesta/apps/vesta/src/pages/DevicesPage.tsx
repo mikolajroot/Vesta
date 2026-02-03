@@ -157,6 +157,32 @@ export function DevicesPage() {
         return;
       }
 
+      case 'deviceDeleted': {
+
+        const deletedDevice = data.data;
+        setDevices((prevDevices) =>
+          prevDevices.filter((device) => device.id !== deletedDevice.id)
+        );
+        
+        setTempSensorReadings((prev) => {
+          const { [deletedDevice.id]: _, ...rest } = prev;
+          return rest;
+        });
+        setHumiditySensorReadings((prev) => {
+          const { [deletedDevice.id]: _, ...rest } = prev;
+          return rest;
+        });
+        setThermostatSetpoints((prev) => {
+          const { [deletedDevice.id]: _, ...rest } = prev;
+          return rest;
+        });
+        setHumidifierSetpoints((prev) => {
+          const { [deletedDevice.id]: _, ...rest } = prev;
+          return rest;
+        });
+        return;
+      }
+
       default: {
         
         setDevices((prevDevices) =>
