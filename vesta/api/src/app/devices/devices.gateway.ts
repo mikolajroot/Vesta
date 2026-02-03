@@ -26,6 +26,16 @@ interface EnergyUpdate {
   timestamp: Date;
 }
 
+interface DeviceCreated {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+  room_id: number;
+  mqtt_topic?: string;
+  created_at: string;
+}
+
 @WebSocketGateway({
   cors: {
     origin: ['https://localhost:3000', 'https://localhost:4200', 'https://localhost:5173','http://localhost:4200'],
@@ -78,7 +88,7 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.server.to(`room-${data.roomId}`).emit('deviceUpdated', data);
   }
 
-  broadcastEnergyUpdate(data: EnergyUpdate) {
-    this.server.to(`room-${data.roomId}`).emit('energyUpdate', data);
+  broadcastDeviceCreated(data: DeviceCreated) {
+    this.server.to(`room-${data.room_id}`).emit('deviceCreated', data);
   }
 }

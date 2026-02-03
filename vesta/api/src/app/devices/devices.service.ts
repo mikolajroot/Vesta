@@ -111,6 +111,16 @@ export class DevicesService {
       await this.mqttService.addCamera(device.id, mqttTopic);
     }
 
+    this.devicesGateway.broadcastDeviceCreated({
+      id: device.id,
+      name: device.name,
+      type: device.type,
+      status: device.status || 'off',
+      room_id: device.room_id,
+      mqtt_topic: device.mqtt_topic ?? undefined,
+      created_at: device.created_at.toISOString(),
+    });
+
     return { message: 'device created successfully' };
   }
 
