@@ -248,9 +248,11 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
             : null;
 
         if (setpoint !== null && current < setpoint) {
-          current += 0.2 + Math.random() * 0.4;
+          current += 0.1 + Math.random() * 0.2;
+        } else if (setpoint !== null && current > setpoint) {
+          current -= 0.1 + Math.random() * 0.2;
         } else {
-          current += (Math.random() - 0.5) * 0.6;
+          current += (Math.random() - 0.5) * 0.3;
         }
 
         current = Math.max(10, Math.min(35, current));
