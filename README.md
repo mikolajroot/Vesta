@@ -87,7 +87,7 @@ The system uses PostgreSQL with the following core models:
 ### Prerequisites
 - Node.js (v20+)
 - PostgreSQL database
-- MQTT broker (optional, for device communication)
+- MQTT broker
 
 ### Installation
 
@@ -129,14 +129,6 @@ This project demonstrates proficiency in:
 - DevOps and deployment workflows
 - IoT device integration
 - Material Design principles
-
-## 📝 CV Description Template
-
-**For Short Descriptions:**
-> Full-stack smart home IoT platform built with React, NestJS, and PostgreSQL. Features real-time device control via MQTT/WebSocket, multi-user management, and role-based access control. Utilizes Nx monorepo architecture with TypeScript throughout.
-
-**For Detailed Descriptions:**
-> Developed a comprehensive smart home management system enabling multi-user IoT device control and monitoring. Implemented React 19 frontend with Material-UI, NestJS backend with Prisma ORM, and PostgreSQL database. Integrated MQTT protocol for real-time device communication and WebSocket for live UI updates. Features include JWT authentication, role-based access control, multi-home management with invite codes, and responsive dashboard with data visualization. Built using Nx monorepo tooling with full TypeScript coverage.
 
 ## 📄 License
 
