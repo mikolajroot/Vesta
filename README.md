@@ -124,3 +124,6 @@ I built this project to get hands-on experience with a few specific concepts:
 
 ## License
 MIT
+
+##
+Mikołaj Miszka
